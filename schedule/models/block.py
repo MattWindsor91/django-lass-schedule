@@ -8,8 +8,9 @@ distinguished on schedule views as well as in lists and searches.
 # IF YOU'RE ADDING CLASSES TO THIS, DON'T FORGET TO ADD THEM TO
 # __init__.py
 
+from django.conf import settings
 from django.db import models
-from urysite import model_extensions as exts
+
 from metadata.models import Type
 import timedelta
 
@@ -23,7 +24,11 @@ class Block(Type):
     conventions.
 
     """
-
+    if hasattr(settings, 'BLOCK_DB_ID_COLUMN'):
+        id = models.AutoField(
+            primary_key=True,
+            db_column='BLOCK_DB_ID_COLUMN'
+        )
     tag = models.CharField(
         max_length=100,
         help_text=(
@@ -35,7 +40,6 @@ class Block(Type):
             """
         )
     )
-
     priority = models.IntegerField(
         help_text=(
             """
@@ -47,7 +51,6 @@ class Block(Type):
             """
         )
     )
-
     is_listable = models.BooleanField(
         default=False,
         help_text=(
@@ -60,11 +63,10 @@ class Block(Type):
     )
 
     class Meta:
-        db_table = 'block'  # In schema 'schedule'
+        if hasattr(settings, 'BLOCK_DB_TABLE'):
+            db_table = settings.BLOCK_DB_TABLE
         ordering = 'priority',
         app_label = 'schedule'
-
-    id = exts.primary_key_from_meta(Meta)
 
 
 class BlockRangeRule(models.Model):
@@ -74,25 +76,31 @@ class BlockRangeRule(models.Model):
     This is the lowest priority rule type.
 
     """
-
-    class Meta:
-        db_table = 'block_range_rule'  # In schema 'schedule'
-        app_label = 'schedule'
+    if hasattr(settings, 'BLOCK_RANGE_DB_ID_COLUMN'):
+        id = models.AutoField(
+            primary_key=True,
+            db_column=settings.BLOCK_RANGE_DB_ID_COLUMN
+        )
+    block = models.ForeignKey(
+        Block,
+        help_text='The block this rule matches against.'
+    )
+    start_time = timedelta.TimedeltaField(
+        help_text='The start of the range defining this block.'
+    )
+    end_time = timedelta.TimedeltaField(
+        help_text='The end of the range defining this block.'
+    )
 
     def __unicode__(self):
         return u'{0} to {1} -> {2}'.format(
             self.start_time,
             self.end_time,
-            self.block)
+            self.block
+        )
 
-    id = exts.primary_key_from_meta(Meta)
-
-    block = models.ForeignKey(
-        Block,
-        help_text='The block this rule matches against.')
-
-    start_time = timedelta.TimedeltaField(
-        help_text='The start of the range defining this block.')
-
-    end_time = timedelta.TimedeltaField(
-        help_text='The end of the range defining this block.')
+    class Meta:
+        if hasattr(settings, 'BLOCK_RANGE_DB_TABLE'):
+            db_table = settings.BLOCK_RANGE_DB_TABLE
+        db_table = 'block_range_rule'  # In schema 'schedule'
+        app_label = 'schedule'
