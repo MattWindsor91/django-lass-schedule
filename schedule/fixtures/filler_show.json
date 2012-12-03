@@ -1,0 +1,27 @@
+[ { "pk": 1
+  , "model": "schedule.show"
+  , "fields": { "date_submitted": "1970-01-01T00:00:00Z"
+              , "show_type": 1
+              , "creator": 1
+              }
+  }
+, { "pk": 1
+  , "model": "schedule.showtype"
+  , "fields": { "has_showdb_entry": false
+              , "name": "Filler"
+              , "public": true
+              }
+  }
+, { "pk": 1
+  , "model": "schedule.location"
+  , "fields": { "name": "Filler Location"
+              }  
+  }
+, { "pk": 1
+  , "model": "schedule.showlocation"
+  , "fields": { "show": 1
+              , "location": 1
+              , "effective_from": "1970-01-01T00:00:00Z"
+              }
+  }
+]
