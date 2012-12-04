@@ -3,8 +3,9 @@
 # IF YOU'RE ADDING CLASSES TO THIS, DON'T FORGET TO ADD THEM TO
 # __init__.py
 
+from django.conf import settings
 from django.db import models
-from urysite import model_extensions as exts
+
 from schedule.models.show import Show
 from schedule.models.block import Block
 
@@ -20,21 +21,24 @@ class BlockShowRule(models.Model):
     directly matching timeslots.
 
     """
+    if hasattr(settings, 'BLOCK_SHOW_RULE_DB_ID_COLUMN'):
+        id = models.AutoField(
+            primary_key=True,
+            db_column=settings.BLOCK_SHOW_RULE_DB_ID_COLUMN
+        )
+    block = models.ForeignKey(
+        Block,
+        help_text='The block this rule matches against.'
+    )
+    show = models.ForeignKey(
+        Show,
+        help_text='The show this rule assigns a block to.'
+    )
 
     class Meta:
-        db_table = 'block_show_rule'  # In schema 'schedule'
-        managed = False  # It's in another schema, so can't manage
+        if hasattr(settings, 'BLOCK_SHOW_RULE_DB_TABLE'):
+            db_table = settings.BLOCK_SHOW_RULE_DB_TABLE
         app_label = 'schedule'
 
     def __unicode__(self):
         return u'{0} -> {1}'.format(self.show, self.block)
-
-    id = exts.primary_key_from_meta(Meta)
-
-    block = models.ForeignKey(
-        Block,
-        help_text='The block this rule matches against.')
-
-    show = models.ForeignKey(
-        Show,
-        help_text='The show this rule assigns a block to.')
