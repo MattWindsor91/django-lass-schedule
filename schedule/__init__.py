@@ -1,4 +1,8 @@
 """
+=====================================
+`schedule` - radio station scheduling
+=====================================
+
 The `schedule` app provides models, views and services related
 to the URY radio schedule and retrieving portions of it.
 
@@ -10,3 +14,5 @@ other apps: the page header at time of writing embeds a ``schedule``
 view in order to provide information about the up-coming shows.
 
 """
+
+__version__ = '0.0.1'
