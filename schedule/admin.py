@@ -25,9 +25,6 @@ class BlockAdmin(admin.ModelAdmin):
     ]
 
 
-admin.site.register(Block, BlockAdmin)
-
-
 ## Timeslot ##
 
 class TimeslotAdmin(admin.ModelAdmin):
@@ -39,9 +36,6 @@ class TimeslotInline(admin.TabularInline):
     model = Timeslot
 
 
-admin.site.register(Timeslot, TimeslotAdmin)
-
-
 ## ShowCredit ##
 
 class ShowCreditInline(admin.TabularInline):
@@ -49,10 +43,7 @@ class ShowCreditInline(admin.TabularInline):
 
 
 class ShowCreditAdmin(admin.ModelAdmin):
-    list_display = ('show', 'person', 'credit_type')
-
-
-admin.site.register(ShowCredit, ShowCreditAdmin)
+    list_display = ('element', 'person', 'credit_type')
 
 
 ## Season ##
@@ -68,9 +59,6 @@ class SeasonInline(admin.TabularInline):
     model = Season
 
 
-admin.site.register(Season, SeasonAdmin)
-
-
 ## Show ##
 
 class ShowAdmin(admin.ModelAdmin):
@@ -83,4 +71,13 @@ class ShowAdmin(admin.ModelAdmin):
     ]
 
 
-admin.site.register(Show, ShowAdmin)
+def register(site):
+    """
+    Registers the schedule admin hooks with an admin site.
+
+    """
+    site.register(Show, ShowAdmin)
+    site.register(Block, BlockAdmin)
+    site.register(Timeslot, TimeslotAdmin)
+    site.register(ShowCredit, ShowCreditAdmin)
+    site.register(Season, SeasonAdmin)
