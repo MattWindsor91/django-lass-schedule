@@ -92,6 +92,11 @@ class Show(MetadataSubjectMixin,
     creation date, credited people, and so on.
 
     """
+    if hasattr(settings, 'SHOW_DB_ID_COLUMN'):
+        id = models.AutoField(
+            primary_key=True,
+            db_column=settings.SHOW_DB_ID_COLUMN
+        )
     _SHOW_TYPE_KWARGS = {}
     if hasattr(settings, 'SHOW_DB_TYPE_COLUMN'):
         _SHOW_TYPE_KWARGS['db_column'] = settings.SHOW_DB_TYPE_COLUMN
