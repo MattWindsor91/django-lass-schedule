@@ -79,7 +79,7 @@ class BlockRangeRule(models.Model):
     if hasattr(settings, 'BLOCK_RANGE_DB_ID_COLUMN'):
         id = models.AutoField(
             primary_key=True,
-            db_column=settings.BLOCK_RANGE_DB_ID_COLUMN
+            db_column=settings.BLOCK_RANGE_RULE_DB_ID_COLUMN
         )
     block = models.ForeignKey(
         Block,
@@ -100,7 +100,7 @@ class BlockRangeRule(models.Model):
         )
 
     class Meta:
-        if hasattr(settings, 'BLOCK_RANGE_DB_TABLE'):
-            db_table = settings.BLOCK_RANGE_DB_TABLE
+        if hasattr(settings, 'BLOCK_RANGE_RULE_DB_TABLE'):
+            db_table = settings.BLOCK_RANGE_RULE_DB_TABLE
         db_table = 'block_range_rule'  # In schema 'schedule'
         app_label = 'schedule'
