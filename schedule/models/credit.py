@@ -20,9 +20,6 @@ ShowCredit = Credit.make_model(
         settings, 'SHOW_CREDIT_DB_ID_COLUMN',
         None
     ),
-    getattr(
-        settings, 'SHOW_CREDIT_DB_FKEY_COLUMN',
-        None
-    ),
-    'The show associated with this credit.',
+    help_text='The show associated with this credit.',
+    fkey=Show.make_foreign_key()
 )
