@@ -70,6 +70,15 @@ class ShowAdmin(admin.ModelAdmin):
         ShowCreditInline
     ]
 
+    # These are needed because title and description are pseudo
+    # attributes exported through the metadata system.
+
+    def title(self, obj):
+        return obj.title
+
+    def description(self, obj):
+        return obj.description
+
 
 def register(site):
     """
