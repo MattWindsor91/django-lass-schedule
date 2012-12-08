@@ -78,7 +78,7 @@ class Timeslot(ApprovableMixin,
     def metadata_strands(self):
         """Provides the sets of this timeslot's metadata."""
         return {
-            'text': self.timeslotmetadata_set
+            'text': self.timeslottextmetadata_set
         }
 
     def metadata_parent(self):
@@ -276,9 +276,6 @@ TimeslotTextMetadata = TextMetadata.make_model(
         settings, 'TIMESLOT_TEXT_METADATA_DB_ID_COLUMN',
         None
     ),
-    getattr(
-        settings, 'TIMESLOT_TEXT_METADATA_DB_FKEY_COLUMN',
-        None
-    ),
-    'The timeslot associated with this textual metadata.',
+    help_text='The timeslot associated with this textual metadata.',
+    fkey=Timeslot.make_foreign_key(),
 )

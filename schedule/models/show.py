@@ -149,7 +149,7 @@ class Show(MetadataSubjectMixin,
 
     def metadata_strands(self):
         return {
-            'text': self.showmetadata_set
+            'text': self.showtextmetadata_set
         }
 
     def credits_set(self):
@@ -188,11 +188,8 @@ ShowTextMetadata = TextMetadata.make_model(
         settings, 'SHOW_TEXT_METADATA_DB_ID_COLUMN',
         None
     ),
-    getattr(
-        settings, 'SHOW_TEXT_METADATA_DB_FKEY_COLUMN',
-        None
-    ),
-    'The show associated with this textual metadata.',
+    help_text='The show associated with this textual metadata.',
+    fkey=Show.make_foreign_key,
 )
 
 
@@ -208,11 +205,8 @@ ShowImageMetadata = ImageMetadata.make_model(
         settings, 'SHOW_IMAGE_METADATA_DB_ID_COLUMN',
         None
     ),
-    getattr(
-        settings, 'SHOW_IMAGE_METADATA_DB_FKEY_COLUMN',
-        None
-    ),
-    'The show associated with this image metadata.',
+    help_text='The show associated with this image metadata.',
+    fkey=Show.make_foreign_key,
 )
 
 

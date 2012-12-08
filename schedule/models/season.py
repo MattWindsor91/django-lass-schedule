@@ -52,7 +52,7 @@ class Season(MetadataSubjectMixin,
 
     def metadata_strands(self):
         return {
-            'text': self.seasonmetadata_set
+            'text': self.seasontextmetadata_set
         }
 
     def metadata_parent(self):
@@ -142,9 +142,6 @@ SeasonTextMetadata = TextMetadata.make_model(
         settings, 'SEASON_TEXT_METADATA_DB_ID_COLUMN',
         None
     ),
-    getattr(
-        settings, 'SEASON_TEXT_METADATA_DB_FKEY_COLUMN',
-        None
-    ),
-    'The season associated with this textual metadata.',
+    help_text='The season associated with this textual metadata.',
+    fkey=Season.make_foreign_key(),
 )
