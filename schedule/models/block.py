@@ -27,7 +27,7 @@ class Block(Type):
     if hasattr(settings, 'BLOCK_DB_ID_COLUMN'):
         id = models.AutoField(
             primary_key=True,
-            db_column='BLOCK_DB_ID_COLUMN'
+            db_column=settings.'BLOCK_DB_ID_COLUMN'
         )
     tag = models.CharField(
         max_length=100,
