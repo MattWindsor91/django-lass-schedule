@@ -125,8 +125,7 @@ class Show(MetadataSubjectMixin,
     @classmethod
     def make_foreign_key(cls):
         """
-        Shortcut for creating a field that links to a show, given the
-        source model's metadata class.
+        Shortcut for creating a field that links to a show.
 
         """
         _FKEY_KWARGS = {}
@@ -211,15 +210,12 @@ ShowImageMetadata = ImageMetadata.make_model(
 )
 
 
-class ShowPodcastLink(PodcastLink):
-    """A link between a show and a podcast."""
-    if hasattr(settings, 'SHOW_PODCAST_LINK_DB_ID_COLUMN'):
-        id = models.AutoField(
-            primary_key=True,
-            db_column=settings.SHOW_PODCAST_LINK_DB_ID_COLUMN
-        )
-
-    class Meta(PodcastLink.Meta):
-        if hasattr(settings, 'SHOW_PODCAST_LINK_DB_TABLE'):
-            db_table = settings.SHOW_PODCAST_LINK_DB_TABLE
-        app_label = 'schedule'
+ShowPodcastLink = PodcastLink.make_model(
+    Show,
+    'schedule',
+    'ShowPodcastLink',
+    getattr(settings, 'SHOW_PODCAST_LINK_DB_TABLE', None),
+    getattr(settings, 'SHOW_PODCAST_LINK_DB_ID_COLUMN', None),
+    help_text='The show this podcast link is attached to.',
+    fkey=Show.make_foreign_key()
+)

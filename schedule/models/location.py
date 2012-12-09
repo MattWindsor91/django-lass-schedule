@@ -14,7 +14,10 @@ class Location(models.Model):
 
     """
     if hasattr(settings, 'LOCATION_DB_ID_COLUMN'):
-        db_table = settings.LOCATION_DB_ID_COLUMN
+        id = models.AutoField(
+            primary_key=True,
+            db_column=settings.LOCATION_DB_ID_COLUMN
+        )
     name = models.TextField(
         db_column='location_name',
         help_text='The human-readable name of this location.'
