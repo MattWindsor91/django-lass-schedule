@@ -140,11 +140,10 @@ class Show(MetadataSubjectMixin,
     ## OVERRIDES ##
 
     def __unicode__(self):
-        try:
-            title = self.title
-        except AttributeError:
-            title = '((Untitled))'
-        return u'{0} ({1})'.format(title, self.id)
+        return u'{0} ({1})'.format(
+            getattr(self, 'title', '((Untitled))'),
+            self.id
+        )
 
     @models.permalink
     def get_absolute_url(self):
