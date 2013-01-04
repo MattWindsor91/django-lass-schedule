@@ -46,7 +46,15 @@ class Season(MetadataSubjectMixin,
     ## MAGIC METHODS ##
 
     def __unicode__(self):
-        return u'[{0}] -> {1}'.format(self.show, self.term)
+        try:
+            show = self.show
+        except Show.DoesNotExist:
+            show = '(No Show)'
+        try:
+            term = self.term
+        except Term.DoesNotExist:
+            term = '(No Term)'
+        return u'[{0}] -> {1}'.format(show, term)
 
     ## OVERRIDES ##
 

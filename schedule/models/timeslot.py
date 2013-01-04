@@ -66,8 +66,12 @@ class Timeslot(ApprovableMixin,
 
     def __unicode__(self):
         """Provides a Unicode representation of this timeslot."""
+        try:
+            season = self.season
+        except Season.DoesNotExist:
+            season = '(No Season)'
         return u'{0} ({1} to {2})'.format(
-            self.season,
+            season,
             self.start_time,
             self.end_time())
 
