@@ -191,7 +191,6 @@ ShowTextMetadata = TextMetadata.make_model(
         settings, 'SHOW_TEXT_METADATA_DB_ID_COLUMN',
         None
     ),
-    help_text='The show associated with this textual metadata.',
     fkey=Show.make_foreign_key(),
 )
 
@@ -208,7 +207,6 @@ ShowImageMetadata = ImageMetadata.make_model(
         settings, 'SHOW_IMAGE_METADATA_DB_ID_COLUMN',
         None
     ),
-    help_text='The show associated with this image metadata.',
     fkey=Show.make_foreign_key(),
 )
 
@@ -219,6 +217,5 @@ ShowPodcastLink = PodcastLink.make_model(
     'ShowPodcastLink',
     getattr(settings, 'SHOW_PODCAST_LINK_DB_TABLE', None),
     getattr(settings, 'SHOW_PODCAST_LINK_DB_ID_COLUMN', None),
-    help_text='The show this podcast link is attached to.',
     fkey=Show.make_foreign_key()
 )

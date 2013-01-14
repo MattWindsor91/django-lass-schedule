@@ -150,6 +150,5 @@ SeasonTextMetadata = TextMetadata.make_model(
         settings, 'SEASON_TEXT_METADATA_DB_ID_COLUMN',
         None
     ),
-    help_text='The season associated with this textual metadata.',
     fkey=Season.make_foreign_key(),
 )

@@ -280,6 +280,5 @@ TimeslotTextMetadata = TextMetadata.make_model(
         settings, 'TIMESLOT_TEXT_METADATA_DB_ID_COLUMN',
         None
     ),
-    help_text='The timeslot associated with this textual metadata.',
     fkey=Timeslot.make_foreign_key(),
 )
