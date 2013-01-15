@@ -76,7 +76,7 @@ class BlockRangeRule(models.Model):
     This is the lowest priority rule type.
 
     """
-    if hasattr(settings, 'BLOCK_RANGE_DB_ID_COLUMN'):
+    if hasattr(settings, 'BLOCK_RANGE_RULE_DB_ID_COLUMN'):
         id = models.AutoField(
             primary_key=True,
             db_column=settings.BLOCK_RANGE_RULE_DB_ID_COLUMN
