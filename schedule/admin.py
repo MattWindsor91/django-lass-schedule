@@ -1,9 +1,13 @@
+from django.contrib import admin
+
+from metadata.admin_base import TextMetadataInline
+
 from schedule.models import Block
 from schedule.models import BlockShowRule, BlockRangeRule
 from schedule.models import Show, ShowCredit
+from schedule.models import ShowTextMetadata
 from schedule.models import Season
 from schedule.models import Timeslot
-from django.contrib import admin
 
 
 ## BlockShowRule ##
@@ -61,13 +65,18 @@ class SeasonInline(admin.TabularInline):
 
 ## Show ##
 
+class ShowTextMetadataInline(TextMetadataInline):
+    model = ShowTextMetadata
+
+
 class ShowAdmin(admin.ModelAdmin):
     date_hierarchy = 'date_submitted'
     list_display = ('title', 'description', 'date_submitted')
     list_filter = ('show_type',)
     inlines = [
         SeasonInline,
-        ShowCreditInline
+        ShowCreditInline,
+        ShowTextMetadataInline
     ]
 
     # These are needed because title and description are pseudo
