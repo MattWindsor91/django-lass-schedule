@@ -5,6 +5,10 @@
 
 from django.conf import settings
 from django.db import models
+from django.db.models.loading import get_model
+from django.db.models.query import QuerySet
+
+from model_utils.managers import PassThroughManager
 
 from lass_utils.mixins import SubmittableMixin
 
@@ -16,6 +20,45 @@ from people.mixins import CreditableMixin
 
 from schedule.models.term import Term
 from schedule.models.show import Show
+
+
+class SeasonQuerySet(QuerySet):
+    """
+    Custom QuerySet allowing filtering by various categories of
+    season.
+
+    """
+
+    def scheduled(self):
+        """
+        Filters the QuerySet to contain only seasons that have one
+        or more scheduled timeslots.
+
+        """
+        # We can't use Timeslot directly because it has a cyclic
+        # dependency on Schedule.
+        ts = get_model('schedule', 'Timeslot')
+
+        seasons_with_slots = ts.objects.values_list(
+            'season__pk',
+            flat=True
+        )
+        return self.filter(pk__in=seasons_with_slots)
+
+    def unscheduled(self):
+        """
+        Filters the QuerySet to contain only seasons that have no
+        scheduled timeslots.
+
+        """
+        # As above
+        ts = get_model('schedule', 'Timeslot')
+
+        seasons_with_slots = ts.objects.values_list(
+            'season__pk',
+            flat=True
+        )
+        return self.exclude(pk__in=seasons_with_slots)
 
 
 class Season(MetadataSubjectMixin,
@@ -36,6 +79,7 @@ class Season(MetadataSubjectMixin,
 
     show = Show.make_foreign_key()
     term = Term.make_foreign_key()
+    objects = PassThroughManager.for_queryset_class(SeasonQuerySet)()
 
     class Meta:
         if hasattr(settings, 'SEASON_DB_TABLE'):

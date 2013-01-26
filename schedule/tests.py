@@ -3,7 +3,7 @@ This module contains unit tests for the schedule app.
 """
 
 from django.test import TestCase
-from schedule.models import Term, Timeslot, Show
+from schedule.models import Term, Timeslot, Show, Season
 from schedule.utils import filler
 from schedule.views import week
 from django.utils import timezone
@@ -17,7 +17,7 @@ class FillEmptyRange(TestCase):
 
     """
 
-    fixtures = ['test_people.json', 'test_terms.json', 'filler_show.json']
+    fixtures = ['test_people', 'test_terms', 'filler_show']
 
     def setUp(self):
         self.timeslots = []
@@ -87,17 +87,17 @@ class FillNormalRange(TestCase):
     """
 
     fixtures = [
-        'test_people.json',
-        'test_terms.json',
-        'filler_show.json',
-        'test_shows.json'
+        'test_people',
+        'test_terms',
+        'filler_show',
+        'test_shows'
     ]
 
     def setUp(self):
         assert (Show.objects.count() > 0)
         self.timeslots = list(Timeslot.objects.all())
         assert self.timeslots, \
-            'No timeslots were loaded; please check test_shows.json.'
+            'No timeslots were loaded; please check test_shows.'
 
     def general_fill_tests(self, filled):
         """
@@ -222,3 +222,59 @@ class WeekSchedule(TestCase):
                     ),
                     'Incorrect day returned as Monday.'
                 )
+
+
+class SeasonScheduledSet(TestCase):
+    """
+    Tests whether the 'scheduled' manager correctly retrieves only
+    seasons with scheduled shows, whether the 'objects' manager
+    correctly retrieves all shows, and whether the 'unscheduled'
+    manager retrieves only unscheduled seasons.
+
+    """
+    fixtures = [
+        'test_people',
+        'test_terms',
+        'filler_show',
+        'test_shows'
+    ]
+
+    def setUp(self):
+        pass
+
+    def test_objects_set(self):
+        seasons = set(Season.objects.all())
+        self.assertEqual(len(seasons), 3)
+        self.assertItemsEqual(
+            seasons,
+            set(Season.objects.scheduled()) |
+            set(Season.objects.unscheduled())
+        )
+
+    def test_scheduled_set(self):
+        seasons = set(Season.objects.scheduled())
+        # Change this if the fixture is expanded.
+        self.assertEqual(len(seasons), 1)
+        # Scheduled should contain all seasons not in unscheduled.
+        self.assertItemsEqual(
+            seasons,
+            set(Season.objects.all()) -
+            set(Season.objects.unscheduled())
+        )
+        # "Scheduled" seasons should have at least one timeslot
+        for season in seasons:
+            self.assertNotEqual(season.timeslot_set.count(), 0)
+
+    def test_unscheduled_set(self):
+        seasons = set(Season.objects.unscheduled())
+        # Change this if the fixture is expanded.
+        self.assertEqual(len(seasons), 2)
+        # Unacheduled should contain all seasons not in scheduled.
+        self.assertItemsEqual(
+            seasons,
+            set(Season.objects.all()) -
+            set(Season.objects.scheduled())
+        )
+        # "Scheduled" seasons should have no timeslots
+        for season in seasons:
+            self.assertEqual(season.timeslot_set.count(), 0)
