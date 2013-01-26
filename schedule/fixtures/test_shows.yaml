@@ -1,0 +1,55 @@
+- model: schedule.showtype
+  pk: 2
+  fields: 
+    has_showdb_entry: true
+    name: Test Show
+    public: True
+- model: schedule.show
+  pk: 2
+  fields:
+    date_submitted: "1970-01-01T00:00:00Z"
+    show_type: 2
+    creator: 1
+# Show with no seasons for testing schedule-based models.
+- model: schedule.show
+  pk: 3
+  fields:
+    date_submitted: "1970-01-01T00:00:00Z"
+    show_type: 2
+    creator: 1
+- model: schedule.season
+  pk: 1
+  fields:
+    show: 2
+    date_submitted: "1970-01-01T00:00:00Z"
+    term: 1
+    creator: 1
+# Seasons with no timeslots to test scheduled/unscheduled sets.
+- model: schedule.season
+  pk: 2
+  fields:
+    show: 2
+    date_submitted: "1970-01-01T00:00:00Z"
+    term: 1
+    creator: 1
+- model: schedule.season
+  pk: 3
+  fields:
+    show: 2
+    date_submitted: "1970-01-01T00:00:00Z"
+    term: 1
+    creator: 1
+- model: schedule.timeslot
+  pk: 1
+  fields:
+    season: 1
+    start_time: "2012-10-10T07:00:00Z"
+    duration: 1:00:00
+    creator: 1
+- model: schedule.timeslot
+  pk: 2
+  fields:
+    season: 1
+    start_time: "2012-10-10T09:00:00Z"
+    duration: 2:00:00
+    creator: 1
