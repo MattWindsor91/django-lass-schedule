@@ -4,11 +4,23 @@
     has_showdb_entry: true
     name: Test Show
     public: True
+- model: schedule.showtype
+  pk: 3
+  fields: 
+    has_showdb_entry: False
+    name: NonListable Show
+    public: True
 - model: schedule.show
   pk: 2
   fields:
     date_submitted: "1970-01-01T00:00:00Z"
     show_type: 2
+    creator: 1
+- model: schedule.show
+  pk: 5
+  fields:
+    date_submitted: "1970-01-01T00:00:00Z"
+    show_type: 3
     creator: 1
 # Show with no scheduled seasons for testing schedule-based models.
 - model: schedule.show
@@ -16,6 +28,12 @@
   fields:
     date_submitted: "1970-01-01T00:00:00Z"
     show_type: 2
+    creator: 1
+- model: schedule.show
+  pk: 6
+  fields:
+    date_submitted: "1970-01-01T00:00:00Z"
+    show_type: 3
     creator: 1
 # Show with no seasons for testing schedule-based models.
 - model: schedule.show
@@ -53,6 +71,13 @@
     date_submitted: "1970-01-01T00:00:00Z"
     term: 1
     creator: 1
+- model: schedule.season
+  pk: 5
+  fields:
+    show: 5
+    date_submitted: "1970-01-01T00:00:00Z"
+    term: 1
+    creator: 1
 - model: schedule.timeslot
   pk: 1
   fields:
@@ -67,3 +92,11 @@
     start_time: "2012-10-10T09:00:00Z"
     duration: 2:00:00
     creator: 1
+- model: schedule.timeslot
+  pk: 3
+  fields:
+    season: 5
+    start_time: "2012-10-10T14:00:00Z"
+    duration: 1:00:00
+    creator: 1
+

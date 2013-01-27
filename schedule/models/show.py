@@ -37,10 +37,19 @@ class ShowQuerySet(QuerySet):
     show.
 
     """
+    def listable(self):
+        """
+        Filter the QuerySet to contain only shows that should be in
+        public show lists.
+
+        """
+        return self.scheduled().filter(
+            show_type__has_showdb_entry=True
+        )
 
     def scheduled(self):
         """
-        Filters the QuerySet to contain only seasons that have one
+        Filters the QuerySet to contain only shows that have one
         or more scheduled timeslots.
 
         """
