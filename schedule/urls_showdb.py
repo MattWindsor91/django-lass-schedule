@@ -28,20 +28,24 @@ showdb_show_regex, \
 
 urlpatterns = patterns(
     'schedule.views',
-    url(r'^$',
-        ListView.as_view(
-            queryset=Show.objects.listable(),
-            name='show_index')
-        ),
-    url(showdb_show_regex,
-        DetailView.as_view(
-            queryset=Show.objects.listable(),
-            name='show_detail')
-        ),
-    url(showdb_season_regex,
+    url(
+        r'^$',
+        ListView.as_view(queryset=Show.objects.listable()),
+        name='show_index'
+    ),
+    url(
+        showdb_show_regex,
+        DetailView.as_view(queryset=Show.objects.listable()),
+        name='show_detail'
+    ),
+    url(
+        showdb_season_regex,
         'season_detail',
-        name='season_detail'),
-    url(showdb_timeslot_regex,
+        name='season_detail'
+    ),
+    url(
+        showdb_timeslot_regex,
         'timeslot_detail',
-        name='timeslot_detail'),
+        name='timeslot_detail'
+    ),
 )
