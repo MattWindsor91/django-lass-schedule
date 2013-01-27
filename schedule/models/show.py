@@ -8,6 +8,10 @@
 
 from django.conf import settings
 from django.db import models
+from django.db.models.loading import get_model
+from django.db.models.query import QuerySet
+
+from model_utils.managers import PassThroughManager
 
 from lass_utils.mixins import SubmittableMixin
 from lass_utils.mixins import EffectiveRangeMixin
@@ -25,6 +29,45 @@ from people.mixins import CreatableMixin
 from people.mixins import CreditableMixin
 
 from schedule.models import Location
+
+
+class ShowQuerySet(QuerySet):
+    """
+    Custom QuerySet allowing filtering by various categories of
+    show.
+
+    """
+
+    def scheduled(self):
+        """
+        Filters the QuerySet to contain only seasons that have one
+        or more scheduled timeslots.
+
+        """
+        # We can't use Season directly because it has a cyclic
+        # dependency on Show.
+        sh = get_model('schedule', 'Season')
+
+        scheduled_shows = sh.objects.scheduled().values_list(
+            'show__pk',
+            flat=True
+        )
+        return self.filter(pk__in=scheduled_shows)
+
+    def unscheduled(self):
+        """
+        Filters the QuerySet to contain only seasons that have no
+        scheduled timeslots.
+
+        """
+        # As above
+        sh = get_model('schedule', 'Season')
+
+        scheduled_shows = sh.objects.scheduled().values_list(
+            'show__pk',
+            flat=True
+        )
+        return self.exclude(pk__in=scheduled_shows)
 
 
 class ShowType(Type):
@@ -115,6 +158,7 @@ class Show(MetadataSubjectMixin,
         Location,
         through=ShowLocation
     )
+    objects = PassThroughManager.for_queryset_class(ShowQuerySet)()
 
     class Meta:
         if hasattr(settings, 'SHOW_DB_TABLE'):

@@ -10,9 +10,16 @@
     date_submitted: "1970-01-01T00:00:00Z"
     show_type: 2
     creator: 1
-# Show with no seasons for testing schedule-based models.
+# Show with no scheduled seasons for testing schedule-based models.
 - model: schedule.show
   pk: 3
+  fields:
+    date_submitted: "1970-01-01T00:00:00Z"
+    show_type: 2
+    creator: 1
+# Show with no seasons for testing schedule-based models.
+- model: schedule.show
+  pk: 4
   fields:
     date_submitted: "1970-01-01T00:00:00Z"
     show_type: 2
@@ -36,6 +43,13 @@
   pk: 3
   fields:
     show: 2
+    date_submitted: "1970-01-01T00:00:00Z"
+    term: 1
+    creator: 1
+- model: schedule.season
+  pk: 4
+  fields:
+    show: 3
     date_submitted: "1970-01-01T00:00:00Z"
     term: 1
     creator: 1

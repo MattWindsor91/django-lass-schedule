@@ -36,7 +36,7 @@ class SeasonQuerySet(QuerySet):
 
         """
         # We can't use Timeslot directly because it has a cyclic
-        # dependency on Schedule.
+        # dependency on Season.
         ts = get_model('schedule', 'Timeslot')
 
         seasons_with_slots = ts.objects.values_list(

@@ -224,11 +224,75 @@ class WeekSchedule(TestCase):
                 )
 
 
-class SeasonScheduledSet(TestCase):
+class ShowScheduledSet(TestCase):
     """
     Tests whether the 'scheduled' manager correctly retrieves only
     seasons with scheduled shows, whether the 'objects' manager
     correctly retrieves all shows, and whether the 'unscheduled'
+    manager retrieves only unscheduled shows.
+
+    """
+    fixtures = [
+        'test_people',
+        'test_terms',
+        'filler_show',
+        'test_shows'
+    ]
+
+    def setUp(self):
+        pass
+
+    def test_objects_set(self):
+        shows = set(Show.objects.all())
+        # NB: Filler show is counted (should be unscheduled)
+        self.assertEqual(len(shows), 4)
+        self.assertItemsEqual(
+            shows,
+            set(Show.objects.scheduled()) |
+            set(Show.objects.unscheduled())
+        )
+
+    def test_scheduled_set(self):
+        shows = set(Show.objects.scheduled())
+        # Change this if the fixture is expanded.
+        self.assertEqual(len(shows), 1)
+        # Scheduled should contain all shows not in unscheduled.
+        self.assertItemsEqual(
+            shows,
+            set(Show.objects.all()) -
+            set(Show.objects.unscheduled())
+        )
+        # "Scheduled" shows should have at least one scheduled season
+        for show in shows:
+            self.assertGreater(
+                show.season_set.all().scheduled().count(),
+                0
+            )
+
+    def test_unscheduled_set(self):
+        shows = set(Show.objects.unscheduled())
+        # Change this if the fixture is expanded.
+        # NB: Filler show is counted (should be unscheduled)
+        self.assertEqual(len(shows), 3)
+        # Unacheduled should contain all shows not in scheduled.
+        self.assertItemsEqual(
+            shows,
+            set(Show.objects.all()) -
+            set(Show.objects.scheduled())
+        )
+        # "Uncheduled" shows should have no seasons with timeslots
+        for show in shows:
+            self.assertEqual(
+                show.season_set.all().scheduled().count(),
+                0
+            )
+
+
+class SeasonScheduledSet(TestCase):
+    """
+    Tests whether the 'scheduled' manager correctly retrieves only
+    seasons with scheduled seasons, whether the 'objects' manager
+    correctly retrieves all seasons, and whether the 'unscheduled'
     manager retrieves only unscheduled seasons.
 
     """
@@ -244,7 +308,7 @@ class SeasonScheduledSet(TestCase):
 
     def test_objects_set(self):
         seasons = set(Season.objects.all())
-        self.assertEqual(len(seasons), 3)
+        self.assertEqual(len(seasons), 4)
         self.assertItemsEqual(
             seasons,
             set(Season.objects.scheduled()) |
@@ -268,7 +332,7 @@ class SeasonScheduledSet(TestCase):
     def test_unscheduled_set(self):
         seasons = set(Season.objects.unscheduled())
         # Change this if the fixture is expanded.
-        self.assertEqual(len(seasons), 2)
+        self.assertEqual(len(seasons), 3)
         # Unacheduled should contain all seasons not in scheduled.
         self.assertItemsEqual(
             seasons,
