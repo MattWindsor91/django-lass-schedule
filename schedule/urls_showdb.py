@@ -30,14 +30,14 @@ urlpatterns = patterns(
     'schedule.views',
     url(r'^$',
         ListView.as_view(
-            queryset=Show.objects.filter(
-                show_type__has_showdb_entry=True)),
-        name='show_index'),
+            queryset=Show.objects.listable(),
+            name='show_index')
+        ),
     url(showdb_show_regex,
         DetailView.as_view(
-            queryset=Show.objects.filter(
-                show_type__has_showdb_entry=True)),
-        name='show_detail'),
+            queryset=Show.objects.listable(),
+            name='show_detail')
+        ),
     url(showdb_season_regex,
         'season_detail',
         name='season_detail'),
