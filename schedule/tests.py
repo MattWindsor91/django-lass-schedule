@@ -2,6 +2,8 @@
 This module contains unit tests for the schedule app.
 """
 
+import operator
+
 from django.test import TestCase
 from schedule.models import Term, Timeslot, Show, Season
 from schedule.utils import filler
@@ -10,13 +12,51 @@ from django.utils import timezone
 from datetime import timedelta
 
 
+class TermTestbed(TestCase):
+    """
+    Tests that the :class:`Term` model behaves itself.
+
+    """
+    fixtures = ['test_terms']
+ 
+    def setUp(self):
+        self.terms = list(Term.objects.all())
+
+    def test_ordering(self):
+        """
+        Tests whether the term model produces ordered lists.
+
+        """
+        self.assertEqual(
+            self.terms,
+            sorted(self.terms, key=operator.attrgetter('start_date'))
+        )
+
+    def test_of_term_end(self):
+        """
+        Tests whether :method:`of` works correctly on term
+        boundaries.
+
+        """
+        for term in self.terms:
+            self.assertIsNone(Term.of(term.end_date))
+
+    def test_before_term_end(self):
+        """
+        Tests whether :method:`before` works correctly on term
+        boundaries.
+
+        """
+        for term in self.terms:
+            self.assertEqual(Term.before(term.end_date), term)
+        
+
 class FillEmptyRange(TestCase):
     """
     Tests whether the filling algorithm correctly handles an empty
     timeslot list.
 
     """
-
     fixtures = ['test_people', 'test_terms', 'filler_show']
 
     def setUp(self):

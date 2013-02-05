@@ -37,6 +37,7 @@ class Term(models.Model):
             db_table = settings.TERM_DB_TABLE
         app_label = 'schedule'
         get_latest_by = 'start_date'
+        ordering = ['start_date']
 
     def __unicode__(self):
         """
@@ -48,7 +49,7 @@ class Term(models.Model):
 
         """
         year = self.academic_year()
-        return u'{0} Term {1}/{2}'.format(
+        return u'{} Term {}/{}'.format(
             self.name,
             year,
             (year + 1) % 100
