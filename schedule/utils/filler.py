@@ -91,7 +91,10 @@ def season(start_time, duration):
     this_term = term(start_time, duration)
     if this_term is None:
         raise ValueError(
-            "Tried to create filler show outside a term.")
+            "Tried filling without a term at {}.".format(
+                start_time
+            )
+        )
     return Season(
         show=show(start_time, duration),
         term=this_term,
