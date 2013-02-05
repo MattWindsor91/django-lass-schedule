@@ -19,7 +19,6 @@ from django.views.decorators.cache import cache_page
 ## Only export the actual views that are reachable through URLconf
 ## Thanks!
 
-@cache_page(60 * 60)  # Cache hourly
 def schedule_week_from_date(request, week_start):
     """
     The week-at-a-glance schedule view, with the week specified
@@ -43,6 +42,16 @@ def schedule_week_from_date(request, week_start):
     )
 
     term = Term.of(week_start)
+    schedule_fail = None
+    schedule = None
+    if term is None:
+        schedule_fail = (
+            'holiday'
+            if Term.before(week_start)
+            else 'noterm'
+        )
+    elif Timeslot.in_week(week_start).count() == 0:
+        schedule_fail = 'empty'
     schedule = None if not term else WeekTable.tabulate(
         ScheduleRange.week(
             timezone.localtime(week_start),

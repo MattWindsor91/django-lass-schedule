@@ -28,6 +28,19 @@ class SeasonQuerySet(QuerySet):
     season.
 
     """
+    def public(self):
+        """
+        Filters down to seasons that are publicly available.
+
+        """
+        return self.filter(show__in=Show.objects.public())
+
+    def private(self):
+        """
+        Filters down to seasons that are not publicly available.
+
+        """
+        return self.filter(show__in=Show.objects.private())
 
     def scheduled(self):
         """

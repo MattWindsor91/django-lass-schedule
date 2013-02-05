@@ -37,6 +37,20 @@ class ShowQuerySet(QuerySet):
     show.
 
     """
+    def public(self):
+        """
+        Filters down to shows that are publicly available.
+
+        """
+        return self.filter(show_type__public=True)
+
+    def private(self):
+        """
+        Filters down to shows that are not publicly available.
+
+        """
+        return self.filter(show_type__public=False)
+
     def listable(self):
         """
         Filter the QuerySet to contain only shows that should be in

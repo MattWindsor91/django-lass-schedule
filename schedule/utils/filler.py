@@ -33,9 +33,11 @@ show type named 'filler'.
 # the higher levels of the website.  As always, improvements are
 # very welcome.
 
-from schedule.models import Term, Show, Season, Timeslot
 from django.db.models import F
 from django.core.cache import cache
+
+from schedule import exceptions
+from schedule.models import Term, Show, Season, Timeslot
 
 
 FILLER_SHOW_CACHE_TIME = 60 * 60 * 24  # One day
@@ -73,9 +75,15 @@ def term(start_time, duration):
         created, as a timedelta
     """
     term = Term.of(start_time)
-    return term if term else Term.before(start_time)
-    # It's better to return a term that only slightly makes
-    # sense over not returning a term at all
+    if not term:
+        term = Term.before(start_time)
+    if not term:
+        raise exceptions.ScheduleInconsistencyError(
+            exceptions.MSG_NO_TERM_WHILE_FILLING.format({
+                'time': start_time
+            })
+        )
+    return term
 
 
 def season(start_time, duration):
@@ -89,12 +97,11 @@ def season(start_time, duration):
         created, as a timedelta
     """
     this_term = term(start_time, duration)
-    if this_term is None:
-        raise ValueError(
-            "Tried filling without a term at {}.".format(
-                start_time
-            )
-        )
+    assert this_term, "term({},{}) returned falsy value {}".format(
+        start_time,
+        duration,
+        repr(this_term)
+    )
     return Season(
         show=show(start_time, duration),
         term=this_term,
@@ -139,7 +146,7 @@ def end_before(time):
     If there was no such timeslot, the original time is returned.
 
     """
-    slots = Timeslot.objects.filter(
+    slots = Timeslot.objects.public().filter(
         start_time__lte=time - F('duration'))
     try:
         result = slots.latest().end_time()
@@ -156,7 +163,7 @@ def start_after(time):
     If there is no such timeslot, the original time is returned.
 
     """
-    slots = Timeslot.objects.filter(start_time__gte=time)
+    slots = Timeslot.objects.public().filter(start_time__gte=time)
     try:
         result = slots.order_by('start_time')[0].start_time
     except IndexError:

@@ -7,6 +7,7 @@ from datetime import timedelta as td
 
 from django.conf import settings
 from django.db import models
+from django.db.models.query import QuerySet
 from django.utils import timezone
 
 import timedelta
@@ -16,6 +17,8 @@ from lass_utils.mixins import DateRangeMixin
 from metadata.models.text import TextMetadata
 from metadata.mixins import MetadataSubjectMixin
 
+from model_utils.managers import PassThroughManager
+
 from people.mixins.approvable import ApprovableMixin
 from people.mixins.creatable import CreatableMixin
 from people.mixins.creditable import CreditableMixin
@@ -23,6 +26,76 @@ from people.mixins.creditable import CreditableMixin
 from schedule.models.block import BlockRangeRule
 from schedule.models.show import ShowLocation
 from schedule.models.season import Season
+
+
+class TimeslotQuerySet(QuerySet):
+    """
+    Custom QuerySet allowing date range-based filtering.
+
+    """
+    def public(self):
+        """
+        Filters down to timeslots that are publicly available.
+
+        """
+        return self.filter(season__in=Season.objects.public())
+
+    def private(self):
+        """
+        Filters down to timeslots that are not publicly available.
+
+        """
+        return self.filter(season__in=Season.objects.private())
+
+    def in_range(self, from_date, to_date):
+        """
+        Filters towards a QuerySet of items in this QuerySet that are
+        effective during the given date range.
+
+        The items must cover the entire range.
+
+        Items with an 'effective_from' of NULL will be discarded;
+        items with an 'effective_to' of NULL will be treated as if
+        their effective_to is infinitely far in the future.
+
+        If queryset is given, it will be filtered with the
+        above condition; else the entire object set will be
+        considered.
+
+        """
+        # Note that filter throws out objects with fields set to
+        # NULL whereas exclude does not.
+        return (
+            self
+            .filter(start_time__lte=from_date)
+            .exclude(
+                start_time__lt=to_date - models.F('duration')
+            )
+        )
+
+    def in_day(self, day_start):
+        """
+        Filters down to timeslots between `day_start` and the point
+        exactly one day after, exclusive.
+
+        """
+        return self.in_range(day_start, day_start + td(days=1))
+
+    def in_week(self, week_start):
+        """
+        Filters down to timeslots between `week_start` and the point
+        exactly one week after, exclusive.
+
+        """
+        return self.in_range(week_start, week_start + td(weeks=1))
+
+    def at(self, date):
+        """
+        Wrapper around 'in_range' that retrieves items effective
+        at the given moment in time.
+
+        """
+        return self.in_range(date, date)
 
 
 class Timeslot(ApprovableMixin,
@@ -48,11 +121,14 @@ class Timeslot(ApprovableMixin,
     season = Season.make_foreign_key()
     start_time = models.DateTimeField(
         db_column='start_time',
-        help_text='The date and time of the start of this timeslot.')
+        help_text='The date and time of the start of this timeslot.'
+    )
     duration = timedelta.TimedeltaField(
         db_column='duration',
         default='1:00:00',
-        help_text='The duration of the timeslot.')
+        help_text='The duration of the timeslot.'
+    )
+    objects = PassThroughManager.for_queryset_class(TimeslotQuerySet)()
 
     class Meta:
         if hasattr(settings, 'TIMESLOT_DB_TABLE'):
@@ -119,7 +195,10 @@ class Timeslot(ApprovableMixin,
         time in a filter.
 
         """
-        return u'start_time__{0}'.format(inequality), value
+        return (
+            u'__'.join(u'start_time', inequality),
+            value
+        )
 
     @classmethod
     def range_end_filter_arg(cls, inequality, value):
@@ -129,8 +208,10 @@ class Timeslot(ApprovableMixin,
         time in a filter.
 
         """
-        return (u'duration__{0}'.format(inequality),
-                value - models.F('start_time'))
+        return (
+            u'__'.join(u'duration', inequality),
+            value - models.F('start_time')
+        )
 
     # Model
 
@@ -201,7 +282,8 @@ class Timeslot(ApprovableMixin,
                 hour=0,
                 minute=0,
                 second=0,
-                microsecond=0)
+                microsecond=0
+            )
             slot_end = slot_start + self.duration
             assert slot_start < slot_end, "Slot starts after end."
 
@@ -209,7 +291,8 @@ class Timeslot(ApprovableMixin,
             # dates are in UTC, we'll need to subtract the local
             # time's UTC offset in the calculations.
             utc = self.start_time.astimezone(
-                timezone.get_current_timezone()).utcoffset()
+                timezone.get_current_timezone()
+            ).utcoffset()
             day = td(days=1)
 
             # Now we can do simple inequalities to match the
@@ -227,9 +310,11 @@ class Timeslot(ApprovableMixin,
                     end_time__gte=slot_end + utc + day
                 )
             ).order_by('-block__priority')
-            block = (block_range_matches[0].block
-                     if block_range_matches
-                     else None)
+            block = (
+                block_range_matches[0].block
+                if block_range_matches
+                else None
+            )
         else:
             block = season_block
         return block
