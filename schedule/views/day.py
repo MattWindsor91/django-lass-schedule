@@ -9,7 +9,6 @@ from schedule.views.common import ury_start_on_date, get_week_day
 from django.shortcuts import render
 from django.utils import timezone
 from schedule.models import Term
-from django.views.decorators.cache import cache_page
 
 
 ## SUPPORTING FUNCTIONS
@@ -18,44 +17,44 @@ from django.views.decorators.cache import cache_page
 ## Only export the actual views that are reachable through URLconf
 ## Thanks!
 
-@cache_page(60 * 60)  # Cache hourly
 def schedule_day_from_date(request, day_start):
     """The day-at-a-glance schedule view, with the day specfied by
     a date object (including the start time of the schedule).
 
     """
-    this_year, this_week, this_day = day_start.isocalendar()
-
-    next_start = day_start + timedelta(days=1)
-    next_year, next_week, next_day = next_start.isocalendar()
-
-    prev_start = day_start - timedelta(days=1)
-    prev_year, prev_week, prev_day = prev_start.isocalendar()
+    ctx = common.nav_context(day_start, timedelta(days=1))
 
     term = Term.of(day_start)
-    schedule = None if not term else ScheduleRange.day(
+
+    schedule_fail = None
+    schedule = None
+    if term is None:
+        schedule_fail = (
+            'holiday'
+            if Term.before(day_start)
+            else 'noterm'
+        )
+    available, why_not, term = schedule_available_for(
         day_start,
-        exclude_before_start=False,
-        exclude_after_end=False,
-        exclude_subsuming=False,
-        with_filler_timeslots=True).data
+        timedelta(days=1)
+    )
+    if available:
+        context['schedule'] = ScheduleRange.day(
+            day_start,
+            exclude_before_start=False,
+            exclude_after_end=False,
+            exclude_subsuming=False,
+            with_filler_timeslots=True
+        ).data
+    else:
+        context['schedule_failure'] = why_not
 
     return render(
         request,
         'schedule/schedule-day.html',
-        {'day_start': day_start,
-            'this_year': this_year,
-            'this_week': this_week,
-            'next_start': next_start,
-            'next_year': next_year,
-            'next_week': next_week,
-            'next_day': next_day,
-            'prev_start': prev_start,
-            'prev_year': prev_year,
-            'prev_week': prev_week,
-            'prev_day': prev_day,
-            'term': term,
-            'schedule': schedule})
+        context
+    )
+
 
 
 ## VIEWS

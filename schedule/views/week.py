@@ -9,8 +9,7 @@ from schedule.views.common import ury_start_on_date, get_week_start
 from schedule.views.week_table import WeekTable
 from django.utils import timezone
 from django.shortcuts import render
-from schedule.models import Term
-from django.views.decorators.cache import cache_page
+from schedule.models import Term, Timeslot
 
 
 ## SUPPORTING FUNCTIONS
@@ -52,17 +51,18 @@ def schedule_week_from_date(request, week_start):
         )
     elif Timeslot.in_week(week_start).count() == 0:
         schedule_fail = 'empty'
-    schedule = None if not term else WeekTable.tabulate(
-        ScheduleRange.week(
-            timezone.localtime(week_start),
-            split_days=True,
-            exclude_before_start=False,
-            exclude_after_end=False,
-            exclude_subsuming=False,
-            with_filler_timeslots=True,
-            exclude_non_public=(not show_private)
+    else:
+        schedule = WeekTable.tabulate(
+            ScheduleRange.week(
+                timezone.localtime(week_start),
+                split_days=True,
+                exclude_before_start=False,
+                exclude_after_end=False,
+                exclude_subsuming=False,
+                with_filler_timeslots=True,
+                exclude_non_public=(not show_private)
+            )
         )
-    )
 
     return render(
         request,
