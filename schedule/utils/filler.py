@@ -36,7 +36,7 @@ show type named 'filler'.
 from django.db.models import F
 from django.core.cache import cache
 
-from schedule import exceptions
+from schedule.utils import exceptions
 from schedule.models import Term, Show, Season, Timeslot
 
 
