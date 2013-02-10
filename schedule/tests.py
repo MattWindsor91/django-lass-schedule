@@ -28,9 +28,10 @@ class ScheduleTests(TestCase):
             # time
             return timezone.now()
 
+        self.type = "Test"
         self.start = timezone.now()
         self.range = timedelta(days=1)
-        self.sched = Schedule(self.start, self.range, builder)
+        self.sched = Schedule(self.type, self.start, self.range, builder)
         self.builder = builder
 
     def test_test_consistency(self):
@@ -43,28 +44,25 @@ class ScheduleTests(TestCase):
         self.assertTrue(self.builder_run)
 
     def test_init_laziness(self):
-        """
-        Ensure that laziness holds immediately after __init__: that is,
-        the schedule data has not been precomputed.
+        """Ensure that laziness holds immediately after __init__.
 
+        That is, the schedule data has not been precomputed.
         """
         self.assertFalse(self.builder_run)
 
-    def test_start_range(self):
+    def test_attributes(self):
+        """Test the basic attributes of Schedule.
         """
-        Ensure that :attr:`Schedule.start` and :attr:`Schedule.range` are set
-        on init and retrievable thereafter.
-
-        """
+        self.assertEqual(self.sched.type, self.type)
         self.assertEqual(self.sched.start, self.start)
         self.assertEqual(self.sched.range, self.range)
 
     def test_previous_next_start_range(self):
-        """
-        Ensure that :meth:`Schedule.prev` and :meth:`Schedule.next` return new
-        schedule objects that represent the schedules one range before and
-        after the current schedule respectively.
+        """Ensure that Schedule.prev and Schedule.next work properly.
 
+        That is, that Schedule.prev and Schedule.next return new schedule
+        objects that represent the schedules one range before and after the
+        current schedule respectively.
         """
         prev = self.sched.previous()
         self.assertIsNot(prev, self.sched)
