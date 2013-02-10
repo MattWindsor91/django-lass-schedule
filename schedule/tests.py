@@ -7,9 +7,106 @@ import operator
 from django.test import TestCase
 from schedule.models import Term, Timeslot, Show, Season
 from schedule.utils import filler
+from schedule.utils.object import Schedule
 from schedule.views import week
 from django.utils import timezone
 from datetime import timedelta
+
+
+class ScheduleTests(TestCase):
+    """
+    Tests that the :class:`Schedule` class behaves itself in the general case,
+    using a stub builder.
+
+    """
+    def setUp(self):
+        self.builder_run = False
+
+        def builder(schedule):
+            self.builder_run = True
+            # This should be something that will be a different object every
+            # time
+            return timezone.now()
+
+        self.start = timezone.now()
+        self.range = timedelta(days=1)
+        self.sched = Schedule(self.start, self.range, builder)
+        self.builder = builder
+
+    def test_test_consistency(self):
+        """
+        Make sure the test itself makes sense!
+
+        """
+        self.assertFalse(self.builder_run)
+        self.builder(None)
+        self.assertTrue(self.builder_run)
+
+    def test_init_laziness(self):
+        """
+        Ensure that laziness holds immediately after __init__: that is,
+        the schedule data has not been precomputed.
+
+        """
+        self.assertFalse(self.builder_run)
+
+    def test_start_range(self):
+        """
+        Ensure that :attr:`Schedule.start` and :attr:`Schedule.range` are set
+        on init and retrievable thereafter.
+
+        """
+        self.assertEqual(self.sched.start, self.start)
+        self.assertEqual(self.sched.range, self.range)
+
+    def test_previous_next_start_range(self):
+        """
+        Ensure that :meth:`Schedule.prev` and :meth:`Schedule.next` return new
+        schedule objects that represent the schedules one range before and
+        after the current schedule respectively.
+
+        """
+        prev = self.sched.previous()
+        self.assertIsNot(prev, self.sched)
+        self.assertEqual(prev.start, self.start - self.range)
+        self.assertEqual(prev.range, self.range)
+
+        next = self.sched.next()
+        self.assertIsNot(next, self.sched)
+        self.assertEqual(next.start, self.start + self.range)
+        self.assertEqual(next.range, self.range)
+
+        self.assertIsNot(prev, next)
+
+    def test_previous_next_laziness(self):
+        """
+        Ensure that laziness is preserved when calling :meth:`Schedule.prev`
+        and :meth:`Schedule.next`; if the data has not been evaluated, it
+        will not be evaluated by calling these functions.
+
+        """
+        self.sched.previous()
+        self.assertFalse(self.builder_run)
+
+        self.sched.next()
+        self.assertFalse(self.builder_run)
+
+    def test_get(self):
+        """
+        Ensure that running :meth:`Schedule.get` evaluates the schedule builder
+        and populates :attr:`Schedule.data`, which should be the result of the
+        function.
+
+        """
+        result = self.sched.data
+        self.assertIsNotNone(result)
+        self.assertTrue(self.builder_run)
+
+        # Make sure get doesn't re-run the builder
+        self.builder_run = False
+        result2 = self.sched.data
+        self.assertIs(result2, result)
+        self.assertFalse(self.builder_run)
 
 
 class TermTestbed(TestCase):
@@ -18,7 +115,7 @@ class TermTestbed(TestCase):
 
     """
     fixtures = ['test_terms']
- 
+
     def setUp(self):
         self.terms = list(Term.objects.all())
 
@@ -49,7 +146,7 @@ class TermTestbed(TestCase):
         """
         for term in self.terms:
             self.assertEqual(Term.before(term.end_date), term)
-        
+
 
 class FillEmptyRange(TestCase):
     """
