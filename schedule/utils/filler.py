@@ -105,7 +105,8 @@ def season(start_time, duration):
     return Season(
         show=show(start_time, duration),
         term=this_term,
-        date_submitted=this_term.start_date)
+        date_submitted=this_term.start_date
+    )
 
 
 def timeslot(start_time, end_time=None, duration=None):
@@ -127,18 +128,19 @@ def timeslot(start_time, end_time=None, duration=None):
             raise ValueError('Specify end or duration.')
         else:
             duration = end_time - start_time
-    elif end_time is not None:
+    elif end_time:
         raise ValueError('Do not specify both end and duration.')
 
     return Timeslot(
         season=season(start_time, end_time),
         start_time=start_time,
-        duration=duration)
+        duration=duration
+    )
 
 
 ## FILLING ALGORITHM HELPERS
 
-def end_before(time):
+def end_before(time, qs):
     """
     Attempts to find the end of the last (real) timeslot that was
     on before the given time.
@@ -146,16 +148,15 @@ def end_before(time):
     If there was no such timeslot, the original time is returned.
 
     """
-    slots = Timeslot.objects.public().filter(
-        start_time__lte=time - F('duration'))
+    slots = qs.filter(start_time__lte=time - F('duration'))
     try:
-        result = slots.latest().end_time()
+        result = slots.only('start_time', 'duration').latest().end_time()
     except Timeslot.DoesNotExist:
         result = time
     return result
 
 
-def start_after(time):
+def start_after(time, qs):
     """
     Attempts to find the start of the first (real) timeslot that is
     on after the given time.
@@ -163,9 +164,11 @@ def start_after(time):
     If there is no such timeslot, the original time is returned.
 
     """
-    slots = Timeslot.objects.public().filter(start_time__gte=time)
+    slots = qs.filter(start_time__gte=time)
     try:
-        result = slots.order_by('start_time')[0].start_time
+        result = slots.values_list(
+            'start_time', flat=True
+        ).order_by('start_time')[0]
     except IndexError:
         result = time
     return result
@@ -188,19 +191,24 @@ def fill(timeslots, start_time, end_time):
     if start_time > end_time:
         raise ValueError('Start time is after end time.')
 
+    qs = Timeslot.objects.public()
+
     if not timeslots:
         filled_timeslots = [
             timeslot(
-                end_before(start_time),
-                start_after(end_time))]
+                end_before(start_time, qs),
+                start_after(end_time, qs)
+            )
+        ]
     else:
         filled_timeslots = []
         # Fill in any gap before the first item
         if timeslots[0].start_time > start_time:
             filled_timeslots.append(
                 timeslot(
-                    end_before(start_time),
-                    timeslots[0].start_time)
+                    end_before(start_time, qs),
+                    timeslots[0].start_time
+                )
             )
         # Next, fill in everything else
         # We're doing this by comparing each new show to the
@@ -224,7 +232,7 @@ def fill(timeslots, start_time, end_time):
             filled_timeslots.append(
                 timeslot(
                     filled_timeslots[-1].end_time(),
-                    start_after(end_time)
+                    start_after(end_time, qs)
                 )
             )
     return filled_timeslots
