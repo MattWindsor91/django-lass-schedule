@@ -36,8 +36,8 @@ show type named 'filler'.
 from django.db.models import F
 from django.core.cache import cache
 
-from schedule.utils import exceptions
-from schedule.models import Term, Show, Season, Timeslot
+from . import exceptions
+from ..models import Term, Show, Season, Timeslot
 
 
 FILLER_SHOW_CACHE_TIME = 60 * 60 * 24  # One day

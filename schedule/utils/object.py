@@ -4,6 +4,9 @@ Provides the :class:`Schedule` class and its :class:`WeekSchedule` and
 
 """
 
+from .. import utils
+from .. import models
+
 
 class Schedule(object):
     """A show schedule.
@@ -65,7 +68,6 @@ class Schedule(object):
         Returns:
             A schedule object representing the schedule period immediately
             before this one.
-
         """
         return self.replace(start=self.start - self.range)
 
@@ -75,7 +77,6 @@ class Schedule(object):
         Returns:
             A schedule object representing the schedule period immediately
             after this one.
-
         """
         return self.replace(start=self.start + self.range)
 
@@ -94,3 +95,38 @@ class Schedule(object):
             self._data = self.builder()
 
         return self._data
+
+
+def range_builder(schedule, timeslots=None):
+    """A simple schedule data builder.
+
+    Args:
+        schedule: The Schedule object that this function is building data for.
+        timeslots: An optional parameter allowing the Timeslot QuerySet from
+            which the schedules are built to be changed from the default of
+            Timeslot.objects.public().
+
+    Returns:
+        Either a list of schedule data, or one of the following strings
+        representing excuses for not retrieving any:
+            'empty' - The requested schedule point was outside of the bounds of
+                known schedule data.
+            'not_in_term' - The requested schedule point was in between two
+                terms.  This usually represents a break in programming.
+        These strings are distinct from any exceptions the builder might raise,
+        which relate to schedule inconsistencies whereas these results are
+        natural features of the schedule.
+    """
+    start = schedule.start
+    end = start + schedule.step
+
+    term = models.Term.of(start)
+    if not term:
+        result = 'empty' if not models.Term.before(start) else 'not_in_term'
+    else:
+        if not timeslots:
+            timeslots = models.Timeslot.objects.public()
+
+        slots = list(timeslots.in_range(start, end))
+        result = utils.filler.fill(slots, start, end) if slots else 'empty'
+    return result

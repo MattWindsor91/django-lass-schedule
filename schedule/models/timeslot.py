@@ -65,13 +65,15 @@ class TimeslotQuerySet(QuerySet):
         """
         # Note that filter throws out objects with fields set to
         # NULL whereas exclude does not.
-        return (
-            self
-            .filter(start_time__lte=from_date)
-            .exclude(
-                start_time__lt=to_date - models.F('duration')
-            )
-        )
+        return self.after(from_date).before(to_date)
+
+    def after(self, date):
+        """Filters to shows that occur partly or wholly after date."""
+        return self.filter(start_time__gt=date - models.F('duration'))
+
+    def before(self, date):
+        """Filters to shows that occur partly or wholly before date."""
+        return self.filter(start_time__lt=date)
 
     def in_day(self, day_start):
         """

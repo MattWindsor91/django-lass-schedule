@@ -5,20 +5,32 @@ from urysite import url_regexes as ur
 
 urlpatterns = patterns(
     'schedule.views',
-    url(r'^$',
-        'index',
-        name='schedule_index'),
-    url(r'^today/',
-        'today',
-        name='today'),
-    url(ur.WEEK_REGEX,
+    url(
+        r'^$',
         'schedule_week',
-        name='schedule_week'),
-    url(ur.WEEKDAY_REGEX,
-        'schedule_weekday',
-        name='schedule_weekday'),
-    url(ur.DAY_REGEX,
+        name='index'
+    ),
+    # DAY SCHEDULES
+    url(
+        r'^today/',
         'schedule_day',
-        name='schedule_day'),
+        name='today'
+    ),
+    url(
+        ur.DAY_REGEX,
+        'schedule_day',
+        name='schedule_day'
+    ),
+    # WEEK SCHEDULES
+    url(
+        ur.WEEK_REGEX,
+        'schedule_week',
+        name='schedule_week'
+    ),
+    url(
+        ur.WEEKDAY_REGEX,
+        'schedule_week',
+        name='schedule_weekday'
+    ),
     url(r'^shows/', include('schedule.urls_showdb')),
 )
