@@ -10,7 +10,8 @@ from django.db import models as d_models
 
 from .. import utils
 from .. import models
-from ..utils.range import dst_add
+from ..utils import range as r
+from ..utils import week_table
 
 
 class Schedule(object):
@@ -37,7 +38,7 @@ class Schedule(object):
                 schedule).
         """
         self.start = start
-        self.end = dst_add(start, range)
+        self.end = r.dst_add(start, range)
         self.range = self.end - self.start
 
         self._data = None
@@ -144,7 +145,7 @@ class WeekSchedule(Schedule):
 
     def tabulate(self):
         """Returns a processed form of the schedule data ready to render."""
-        return utils.week_table.tabulate(self.data)
+        return week_table.tabulate(self)
 
     def __unicode__(self):
         """Representation of this schedule object, in Unicode format."""
