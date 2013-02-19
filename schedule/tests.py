@@ -28,10 +28,9 @@ class ScheduleTests(TestCase):
             # time
             return timezone.now()
 
-        self.type = "Test"
         self.start = timezone.now()
         self.range = timedelta(days=1)
-        self.sched = Schedule(self.type, self.start, self.range, builder)
+        self.sched = Schedule(self.start, self.range, builder)
         self.builder = builder
 
     def test_test_consistency(self):
@@ -53,7 +52,6 @@ class ScheduleTests(TestCase):
     def test_attributes(self):
         """Test the basic attributes of Schedule.
         """
-        self.assertEqual(self.sched.type, self.type)
         self.assertEqual(self.sched.start, self.start)
         self.assertEqual(self.sched.range, self.range)
 
