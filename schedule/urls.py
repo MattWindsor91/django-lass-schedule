@@ -21,16 +21,16 @@ urlpatterns = patterns(
         'schedule_day',
         name='schedule_day'
     ),
+    url(
+        ur.WEEKDAY_REGEX,
+        'schedule_day',
+        name='schedule_weekday'
+    ),
     # WEEK SCHEDULES
     url(
         ur.WEEK_REGEX,
         'schedule_week',
         name='schedule_week'
-    ),
-    url(
-        ur.WEEKDAY_REGEX,
-        'schedule_week',
-        name='schedule_weekday'
     ),
     url(r'^shows/', include('schedule.urls_showdb')),
 )
