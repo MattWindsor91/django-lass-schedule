@@ -133,7 +133,7 @@ def populate_table(table, data_lists):
 
             # If our partitioning is sound, then the slot must fit exactly into
             # one or more rows.
-            if row_date(current_row + add_rows, day_offset) >= nlend:
+            if row_date(current_row + add_rows, day_offset) > nlend:
                 raise utils.exceptions.ScheduleInconsistencyError(
                     'Partitioning unsound - show exceeds partition bounds.'
                 )
