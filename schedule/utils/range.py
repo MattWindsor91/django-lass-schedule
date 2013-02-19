@@ -5,7 +5,6 @@ the schedule.
 
 """
 
-import datetime
 from django.utils import timezone
 
 from . import filler
@@ -63,19 +62,33 @@ def day(today=None, limit=None):
     if not today:
         today = timezone.now()
 
-    tomorrow = today + datetime.timedelta(days=1)
+    tomorrow = dst_add(today, timezone.timedelta(days=1))
     return between(today, tomorrow, limit)
 
 
-def dst_add_days(start_date, num_days):
-    """
-    Given an aware date, calculates the same (local) time `num_days`
-    days in the future.
+def dst_add(start_date, delta):
+    """Adds a timedelta to a local date, taking DST into account.
 
-    Note that this may not actually be exactly `num_days` days later
+    The result is as if the delta was interpreted in terms of local time as
+    opposed to absolute time.
+
+    In other words, the resulting date is the start data plus the delta and any
+    DST offset changes in the meantime, and is thus one hour after or before
+    the simple addition of start_date and delta in some cases.
+
+    For example, if the date is the 1st of January 1pm GMT and delta is six
+    months, the result will be the 1st of July 1pm BST.
+
+    Args:
+        start_date: the datetime to add delta to
+        delta: a timedelta to add to start_date as well as the effects of any
+            DST shifts over that delta
+
+    Returns:
+        the date delta units of local time after start_date.
     """
     if timezone.is_naive(start_date):
-        return start_date + datetime.timedelta(days=num_days)
+        return start_date + delta
         # Can't do anything to a naive datetime
     else:
         # What we do is we strip out the timezone information from
@@ -88,9 +101,6 @@ def dst_add_days(start_date, num_days):
         # If anyone can find a less hacky way of doing this,
         # PLEASE replace it.  It makes me cry just thinking about it.
         return timezone.make_aware(
-            (
-                timezone.make_naive(start_date, start_date.tzinfo)
-                + datetime.timedelta(days=num_days)
-            ),
+            timezone.make_naive(start_date, start_date.tzinfo) + delta,
             start_date.tzinfo
         )

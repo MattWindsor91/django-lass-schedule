@@ -4,16 +4,18 @@ services.
 
 """
 
-from datetime import timedelta
-from schedule.utils import object
-from schedule.views import common
+import datetime
+
+from lass_utils import view_decorators
+
+from . import common
 
 
 ## VIEWS
 ## Only actual views as referenced by URLconf should go here.
 ## Remember to add them to __init__.py!
 
-@common.date_normalise
+@view_decorators.date_normalise
 def schedule_week(request, start):
     """A view outputting a weekly schedule.
 
@@ -21,12 +23,11 @@ def schedule_week(request, start):
         request: the HTTP request this view is responding to
         start: a date representing the start of the week schedule.
     """
-    return object.Schedule(
-        'Day',
-        start,
-        timedelta(days=1),
-        common.builder_from_request(request)
-    ).as_view()
+    return common.schedule_view(
+        request=request,
+        type='week',
+        start=start
+    )
 
 
 ## SUPPORTING FUNCTIONS
@@ -38,4 +39,4 @@ def schedule_week(request, start):
 def to_monday(date):
     """Given a date, find the date of the Monday of its week."""
     days_after_monday = date.weekday()
-    return date - timedelta(days=days_after_monday)
+    return date - datetime.timedelta(days=days_after_monday)

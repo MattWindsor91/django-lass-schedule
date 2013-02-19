@@ -8,7 +8,7 @@ urlpatterns = patterns(
     url(
         r'^$',
         'schedule_week',
-        name='index'
+        name='schedule_index'
     ),
     # DAY SCHEDULES
     url(
