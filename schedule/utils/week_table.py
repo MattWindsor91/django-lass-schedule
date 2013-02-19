@@ -99,7 +99,7 @@ def tabulate(schedule):
     return table
 
 
-def populate_table(nlstart, table, data_lists):
+def populate_table(table, data_lists):
     """Populates empty schedule tables with data from the given lists.
 
     Args:
