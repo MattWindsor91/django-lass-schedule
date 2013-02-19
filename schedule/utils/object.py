@@ -144,7 +144,7 @@ class WeekSchedule(Schedule):
 
     def tabulate(self):
         """Returns a processed form of the schedule data ready to render."""
-        return utils.week_table.self.data
+        return utils.week_table(self.data)
 
     def __unicode__(self):
         """Representation of this schedule object, in Unicode format."""
