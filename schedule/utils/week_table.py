@@ -107,42 +107,101 @@ def populate_table(table, data_lists):
             with schedule data; this is potentially mutated in-place.
         data_lists: a list of lists, each representing one day of consecutive
             timeslots.
+
     Returns:
         the populated table, which may or may not be the same object as table
         depending on implementation.
     """
-    def row_date(row, day_offset):
-        return table[row][SCHEDULE_TIME_COL] + day_offset
-
     for i, day in enumerate(data_lists):
-        day_offset = timezone.timedelta(days=i)
-        current_row = 0
-        for slot in day:
-            # How much local time does this slot take up?
-            nlend = nld(slot.end_time())
+        populate_table_day(
+            make_row_date(table, i),
+            make_add_to_table(table, i),
+            day
+        )
+    return table
 
-            # Work out how many rows this slot fits into.
-            add_rows = 0
-            try:
-                while row_date(current_row + add_rows, day_offset) < nlend:
-                    add_rows += 1
-            except IndexError:
-                # This usually means this show crosses over the day boundary;
-                # this is normal.
-                pass
 
-            # If our partitioning is sound, then the slot must fit exactly into
-            # one or more rows.
-            if row_date(current_row + add_rows, day_offset) > nlend:
+# Higher-order functions
+def make_row_date(table, days):
+    """A function that makes a function mapping rows to their starting
+    datetimes.
+
+    Args:
+        table: the schedule table the returned function will look-up dates in.
+        days: the number of days since the start of the schedule.
+
+    Returns:
+        a function closed over table and day_offset that takes a row and
+        returns its datetime for the day being considered.
+    """
+    offset = timezone.timedelta(days=days)
+    return lambda row: table[row][SCHEDULE_TIME_COL] + offset
+
+
+def make_add_to_table(table, days):
+    """A function that makes a function that adds a slot into a table.
+
+    Args:
+        table: the schedule table the returned function will add entries into.
+        days: the number of days since the start of the schedule.
+
+    Returns:
+        a function closed over table and day_offset that takes a row, timeslot
+        to place on that row and that timeslot's row occupacy, and inserts the
+        data into the schedule table.
+    """
+    col = SCHEDULE_DAY_OFFSET + days
+
+    # Not an expression, therefore cannot be a lambda.
+    def f(row, slot, rows):
+        table[row][col] = slot, rows
+
+    return f
+
+
+def populate_table_day(row_date, add_to_table, day):
+    """Adds a day of slots into the table using the given functions.
+
+    Args:
+        row_date: a function taking a table row index and returning the naive
+            local datetime of its start on this day.
+        add_to_table: a function taking a table row index, a timeslot whose
+            record starting on that row and the number of rows it spans, and
+            adding it into the schedule table.
+    """
+    current_row = 0
+    for slot in day:
+        start_row = current_row
+        hit_bottom = False
+
+        # How much local time does this slot take up?
+        nlend = nld(slot.end_time())
+
+        # Work out how many rows this slot fits into.
+        try:
+            while row_date(current_row) < nlend:
+                current_row += 1
+        except IndexError:
+            # This usually means this show crosses over the day boundary;
+            # this is normal.
+            hit_bottom = True
+        else:
+            # If our partitioning is sound and we haven't run off the end
+            # of a day, then the slot must fit exactly into one or more
+            # rows.
+            if row_date(current_row) > nlend:
                 raise utils.exceptions.ScheduleInconsistencyError(
                     'Partitioning unsound - show exceeds partition bounds.'
+                    ' (Row {}, show {}, date {} > {} < {})'.format(
+                        current_row,
+                        slot,
+                        row_date(current_row),
+                        nlend,
+                        'END' if hit_bottom else row_date(current_row + 1)
+                    )
                 )
 
-            # Mark the slot at the top of its row-span
-            table[current_row] = slot, add_rows
-            current_row += add_rows
-
-    return table
+        add_to_table(start_row, slot, current_row - start_row)
 
 
 def split_days(nlstart, data):
@@ -177,11 +236,12 @@ def split_days(nlstart, data):
         # To deal with shows straddling multiple days, check for multiple
         # rotations (hence the while loop).
         while day_end <= nlslot:
-            day_start, day_end = day_end, day_start + DAY
-            day_list = rotate_day(day_start, day_list, done_day_lists)
+            day_list = rotate_day(day_end, day_list, done_day_lists)
+            day_start, day_end = day_end, day_end + DAY
 
         day_list.append(slot)
-        partitions.add(nlslot - day_start)
+        if nlslot > day_start:
+            partitions.add(nlslot - day_start)
 
     # Finish off by pushing the last day onto the list, as nothing else will
     done_day_lists.append(day_list)
@@ -239,4 +299,4 @@ def empty_table(nlstart, partitions, n_cols):
         offsets for the other days), their offset from nlstart, and then
         num_cols instances of None ready to be filled with schedule data.
     """
-    return [[(nlstart + i)] + ([None] * n_cols) for i in partitions]
+    return [[(nlstart + i)] + ([None] * n_cols) for i in sorted(partitions)]
