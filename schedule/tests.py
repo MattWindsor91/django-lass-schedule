@@ -254,7 +254,7 @@ class FillNormalRange(TestCase):
         for timeslot in filled:
             if timeslot not in self.timeslots:
                 self.assertEqual(
-                    timeslot.show_type().name.lower(),
+                    timeslot.show_type.name.lower(),
                     'filler',
                     'Filler incorrectly added non-filler timeslot.'
                 )

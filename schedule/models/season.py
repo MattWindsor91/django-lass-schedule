@@ -133,24 +133,30 @@ class Season(MetadataSubjectMixin,
         found on the website.
 
         """
-        return ('season_detail', (), {
-            'pk': self.show.id,
-            'season_num': self.number()})
+        return (
+            'season_detail',
+            (),
+            {
+                'pk': self.show.id,
+                'season_num': self.number
+            }
+        )
 
     ## ADDITIONAL METHODS ##
 
+    @property
     def number(self):
         """Returns the relative number of this season, with the first
         season of the attached show returning a number of 1.
 
         """
-        number = None
-        for index, season in enumerate(self.show.season_set.all()):
-            if season.id == self.id:
-                number = index + 1  # Note that this can never be 0
-                break
-        assert number, "Season not in its show's season set."
-        return number
+        if not hasattr(self, '_number'):
+            for index, season in enumerate(self.show.season_set.all()):
+                if season.id == self.id:
+                    self._number = index + 1  # Note that this can never be 0
+                    break
+            assert self._number, "Season not in its show's season set."
+        return self._number
 
     def block(self):
         """Returns the block that the season is in, if any.

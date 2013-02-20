@@ -140,6 +140,40 @@ class Timeslot(ApprovableMixin,
         ordering = ['start_time']
         app_label = 'schedule'
 
+    ## PROPERTIES ##
+
+    @property
+    def show_type(self):
+        """Returns the type of this timeslot's show."""
+        if not hasattr(self, '_show_type'):
+            self._show_type = self.season.show.show_type
+        return self._show_type
+
+    @property
+    def has_showdb_entry(self):
+        """Returns whether the timeslot has an entry in the show database."""
+        return self.show_type.has_showdb_entry
+
+    @property
+    def can_be_messaged(self):
+        """Returns whether this timeslot is messagable via the website."""
+        return self.show_type.can_be_messaged
+
+    @property
+    def location(self):
+        """Returns the location the timeslot was broadcasted from.
+
+        If no location is on file for the timeslot's time, None is
+        returned.
+
+        """
+        locations = self.season.show.showlocation_set.at(self.start_time)
+        try:
+            result = locations.latest().location
+        except ShowLocation.DoesNotExist:
+            result = None
+        return result
+
     ## MAGIC METHODS ##
 
     def __unicode__(self):
@@ -223,40 +257,15 @@ class Timeslot(ApprovableMixin,
         found on the website.
 
         """
-        return ('timeslot_detail', (), {
-            'pk': self.season.show.id,
-            'season_num': self.season.number(),
-            'timeslot_num': self.number()})
-
-    ## ADDITIONAL METHODS ##
-
-    def can_be_messaged(self):
-        """
-        Returns whether this timeslot is messagable via the website.
-
-        """
-        return self.show_type().can_be_messaged
-
-    def show_type(self):
-        """Shortcut to return the type of the show this timeslot is
-        attached to.
-
-        """
-        return self.season.show.show_type
-
-    def location(self):
-        """Returns the location the timeslot was broadcasted from.
-
-        If no location is on file for the timeslot's time, None is
-        returned.
-
-        """
-        locations = ShowLocation.at(
-            self.start_time,
-            queryset=self.season.show.showlocation_set.all())
-        return (locations.latest().location
-                if locations.exists()
-                else None)
+        return (
+            'timeslot_detail',
+            (),
+            {
+                'pk': self.season.show.id,
+                'season_num': self.season.number,
+                'timeslot_num': self.number
+            }
+        )
 
     def block(self):
         """Returns the block that the timeslot is in, if any.
@@ -325,18 +334,19 @@ class Timeslot(ApprovableMixin,
         """Calculates the end time of this timeslot."""
         return self.start_time + self.duration
 
+    @property
     def number(self):
         """Returns the relative number of this timeslot, with the
         first timeslot of the attached season returning a number of 1.
 
         """
-        number = None
-        for index, timeslot in enumerate(self.season.timeslot_set.all()):
-            if timeslot.id == self.id:
-                number = index + 1  # Note that this can never be 0
-                break
-        assert number, "Timeslot not in its season's timeslot set."
-        return number
+        if not hasattr(self, '_number'):
+            for index, timeslot in enumerate(self.season.timeslot_set.all()):
+                if timeslot.id == self.id:
+                    self._number = index + 1  # Note that this can never be 0
+                    break
+            assert self._number, "Timeslot not in its season's timeslot set."
+        return self._number
 
     @classmethod
     def make_foreign_key(cls):
