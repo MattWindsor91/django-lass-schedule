@@ -241,9 +241,9 @@ class Show(MetadataSubjectMixin,
         # Show rules take precedence
         block_matches = self.blockshowrule_set.order_by(
             '-block__priority'
-        ).values_list('block', flat=True)
+        ).only('block')
         try:
-            block = block_matches[0]
+            block = block_matches[0].block
         except IndexError:
             block = None
         return block
