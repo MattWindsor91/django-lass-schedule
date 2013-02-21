@@ -19,9 +19,7 @@ from metadata.mixins import MetadataSubjectMixin
 
 from model_utils.managers import PassThroughManager
 
-from people.mixins.approvable import ApprovableMixin
-from people.mixins.creatable import CreatableMixin
-from people.mixins.creditable import CreditableMixin
+from people import mixins as p_mixins
 
 from schedule.models.block import BlockRangeRule
 from schedule.models.show import ShowLocation
@@ -34,22 +32,15 @@ class TimeslotQuerySet(QuerySet):
 
     """
     def public(self):
-        """
-        Filters down to timeslots that are publicly available.
-
-        """
+        """Filters down to timeslots that are publicly available."""
         return self.filter(season__in=Season.objects.public())
 
     def private(self):
-        """
-        Filters down to timeslots that are not publicly available.
-
-        """
+        """Filters down to timeslots that are not publicly available."""
         return self.filter(season__in=Season.objects.private())
 
     def in_range(self, from_date, to_date):
-        """
-        Filters towards a QuerySet of items in this QuerySet that are
+        """Filters towards a QuerySet of items in this QuerySet that are
         effective during the given date range.
 
         The items must cover the entire range.
@@ -58,10 +49,8 @@ class TimeslotQuerySet(QuerySet):
         items with an 'effective_to' of NULL will be treated as if
         their effective_to is infinitely far in the future.
 
-        If queryset is given, it will be filtered with the
-        above condition; else the entire object set will be
-        considered.
-
+        If queryset is given, it will be filtered with the above condition;
+        else the entire object set will be considered.
         """
         # Note that filter throws out objects with fields set to
         # NULL whereas exclude does not.
@@ -79,7 +68,6 @@ class TimeslotQuerySet(QuerySet):
         """
         Filters down to timeslots between `day_start` and the point
         exactly one day after, exclusive.
-
         """
         return self.in_range(day_start, day_start + td(days=1))
 
@@ -87,7 +75,6 @@ class TimeslotQuerySet(QuerySet):
         """
         Filters down to timeslots between `week_start` and the point
         exactly one week after, exclusive.
-
         """
         return self.in_range(week_start, week_start + td(weeks=1))
 
@@ -95,14 +82,13 @@ class TimeslotQuerySet(QuerySet):
         """
         Wrapper around 'in_range' that retrieves items effective
         at the given moment in time.
-
         """
         return self.in_range(date, date)
 
 
-class Timeslot(ApprovableMixin,
-               CreatableMixin,
-               CreditableMixin,
+class Timeslot(p_mixins.ApprovableMixin,
+               p_mixins.CreatableMixin,
+               p_mixins.CreditableMixin,
                DateRangeMixin,
                MetadataSubjectMixin):
     """
@@ -113,7 +99,6 @@ class Timeslot(ApprovableMixin,
     in-studio recordings, and outside broadcasts as well as in-studio
     shows).  Because of this, a timeslot CANNOT safely be uniquely
     identified from its show and time range - use the timeslot ID.
-
     """
     if hasattr(settings, 'TIMESLOT_DB_ID_COLUMN'):
         id = models.AutoField(
@@ -143,6 +128,11 @@ class Timeslot(ApprovableMixin,
     ## PROPERTIES ##
 
     @property
+    def end_time(self):
+        """Calculates the end time of this timeslot."""
+        return self.start_time + self.duration
+
+    @property
     def show_type(self):
         """Returns the type of this timeslot's show."""
         if not hasattr(self, '_show_type'):
@@ -155,6 +145,11 @@ class Timeslot(ApprovableMixin,
         return self.show_type.has_showdb_entry
 
     @property
+    def is_collapsible(self):
+        """Returns whether this timeslot can collapse in the schedule."""
+        return self.show_type.is_collapsible
+
+    @property
     def can_be_messaged(self):
         """Returns whether this timeslot is messagable via the website."""
         return self.show_type.can_be_messaged
@@ -165,7 +160,6 @@ class Timeslot(ApprovableMixin,
 
         If no location is on file for the timeslot's time, None is
         returned.
-
         """
         locations = self.season.show.showlocation_set.at(self.start_time)
         try:
@@ -185,7 +179,8 @@ class Timeslot(ApprovableMixin,
         return u'{0} ({1} to {2})'.format(
             season,
             self.start_time,
-            self.end_time())
+            self.end_time
+        )
 
     ## OVERRIDES ##
 
@@ -217,7 +212,7 @@ class Timeslot(ApprovableMixin,
 
     def range_end(self):
         """Retrieves the end of this timeslot's date range."""
-        return self.end_time()
+        return self.end_time
 
     def range_duration(self):
         """Retrieves the duration of this timeslot's date range."""
@@ -329,10 +324,6 @@ class Timeslot(ApprovableMixin,
         else:
             block = season_block
         return block
-
-    def end_time(self):
-        """Calculates the end time of this timeslot."""
-        return self.start_time + self.duration
 
     @property
     def number(self):

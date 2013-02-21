@@ -13,7 +13,8 @@ from django.utils import timezone
 from .. import utils
 
 
-# This is a very common timedelta, so we use it as a constant.
+# Common timedeltas
+HOUR = timezone.timedelta(hours=1)
 DAY = timezone.timedelta(days=1)
 
 
@@ -175,7 +176,7 @@ def populate_table_day(row_date, add_to_table, day):
         hit_bottom = False
 
         # How much local time does this slot take up?
-        nlend = nld(slot.end_time())
+        nlend = nld(slot.end_time)
 
         # Work out how many rows this slot fits into.
         try:
@@ -240,12 +241,47 @@ def split_days(nlstart, data):
             day_start, day_end = day_end, day_end + DAY
 
         day_list.append(slot)
-        if nlslot > day_start:
-            partitions.add(nlslot - day_start)
+        add_partitions(day_start, day_end, slot, partitions)
 
     # Finish off by pushing the last day onto the list, as nothing else will
     done_day_lists.append(day_list)
     return done_day_lists, partitions
+
+
+def add_partitions(day_start, day_end, slot, partitions):
+    """Add row boundaries arising from this slot to the partition list.
+
+    Whether or not the timeslot emits row boundaries depends on its type;
+    generally filler slots will not emit full row boundaries, causing the
+    schedule to 'fold up' where no shows are scheduled at that time for an
+    entire week.
+
+    Args:
+        day_start: the naive local time of the start of the day currently being
+            split.
+        day_end: the naive local time of the end of the day currently being
+            split.
+        slot: the timeslot whose start and end times may be added as row
+            partitions.
+        partitions: the set of partitions that may be modified by this
+            function.
+    """
+    if not slot.is_collapsible:
+        # Prevent negative partitions if the show started on a previous day.
+        start_p = max(day_start, nld(slot.start_time)) - day_start
+        # And overly large ones if the show ends on another day.
+        end_p = min(day_end, nld(slot.end_time)) - day_start
+
+        partitions |= {start_p, end_p}
+
+        # Now add all the exact hours between start_par and end_par, if any
+        hour_p = timezone.timedelta(
+            days=start_p.days,
+            seconds=(start_p.seconds % (60 * 60)) + (60 * 60)
+        )
+        while hour_p < end_p:
+            partitions.add(hour_p)
+            hour_p += HOUR
 
 
 def rotate_day(day_end, day_list, done_day_lists):
@@ -279,7 +315,7 @@ def rotate_day(day_end, day_list, done_day_lists):
     # between the two days and, if so, make sure it appears at the start of the
     # new list too.
     last_show = day_list[-1]
-    return [last_show] if nld(last_show.end_time()) > day_end else []
+    return [last_show] if nld(last_show.end_time) > day_end else []
 
 
 def empty_table(nlstart, partitions, n_cols):

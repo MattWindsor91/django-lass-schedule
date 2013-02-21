@@ -190,7 +190,7 @@ class FillEmptyRange(TestCase):
         # The times might be out because filler slots try to set
         # their start/ends to end/starts of adjacent shows.
         self.assertTrue(filler_slot.start_time <= self.past_time)
-        self.assertTrue(filler_slot.end_time() >= self.future_time)
+        self.assertTrue(filler_slot.end_time >= self.future_time)
 
     def test_negative_fill(self):
         """

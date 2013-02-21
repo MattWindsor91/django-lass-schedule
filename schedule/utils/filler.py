@@ -150,7 +150,7 @@ def end_before(time, qs):
     """
     slots = qs.filter(start_time__lte=time - F('duration'))
     try:
-        result = slots.only('start_time', 'duration').latest().end_time()
+        result = slots.only('start_time', 'duration').latest().end_time
     except Timeslot.DoesNotExist:
         result = time
     return result
@@ -217,21 +217,21 @@ def fill(timeslots, start_time, end_time):
         # adding the next show
         for ts in timeslots:
             if filled_timeslots and (
-                    filled_timeslots[-1].end_time()
+                    filled_timeslots[-1].end_time
                     < ts.start_time
             ):
                 filled_timeslots.append(
                     timeslot(
-                        filled_timeslots[-1].end_time(),
+                        filled_timeslots[-1].end_time,
                         ts.start_time
                     )
                 )
             filled_timeslots.append(ts)
         # Finally fill the end
-        if filled_timeslots[-1].end_time() < end_time:
+        if filled_timeslots[-1].end_time < end_time:
             filled_timeslots.append(
                 timeslot(
-                    filled_timeslots[-1].end_time(),
+                    filled_timeslots[-1].end_time,
                     start_after(end_time, qs)
                 )
             )
