@@ -13,8 +13,7 @@ from django.db.models.query import QuerySet
 
 from model_utils.managers import PassThroughManager
 
-from lass_utils.mixins import SubmittableMixin
-from lass_utils.mixins import EffectiveRangeMixin
+from lass_utils import mixins as l_mixins
 from lass_utils.models.type import Type
 
 from metadata.mixins import MetadataSubjectMixin
@@ -24,9 +23,7 @@ from metadata.models.image import ImageMetadata
 from uryplayer.models import PodcastLink
 
 from people.models import Person
-from people.mixins import ApprovableMixin
-from people.mixins import CreatableMixin
-from people.mixins import CreditableMixin
+from people import mixins as p_mixins
 
 from schedule.models import Location
 
@@ -105,12 +102,17 @@ class ShowType(Type):
         )
     public = models.BooleanField(default=True)
     has_showdb_entry = models.BooleanField(default=True)
+    is_collapsible = models.BooleanField(
+        default=False,
+        help_text=(
+            "If this is True, then shows of this type can be elided in a "
+            "schedule listing.  For example, in week schedules, time periods "
+            "for which there are only filler shows scheduled can be collapsed."
+        )
+    )
     can_be_messaged = models.BooleanField(
         default=False,
-        help_text="""If this is True, then the show can be messaged
-            through the main page message form.
-
-            """
+        help_text="If this is True, then shows of this type can be messaged."
     )
 
     class Meta(Type.Meta):
@@ -119,9 +121,9 @@ class ShowType(Type):
         app_label = 'schedule'
 
 
-class ShowLocation(EffectiveRangeMixin,
-                   CreatableMixin,
-                   ApprovableMixin):
+class ShowLocation(l_mixins.EffectiveRangeMixin,
+                   p_mixins.CreatableMixin,
+                   p_mixins.ApprovableMixin):
     """
     A mapping of shows to their locations.
 
@@ -140,16 +142,16 @@ class ShowLocation(EffectiveRangeMixin,
         db_column='location_id'
     )
 
-    class Meta(EffectiveRangeMixin.Meta):
+    class Meta(l_mixins.EffectiveRangeMixin.Meta):
         if hasattr(settings, 'SHOW_LOCATION_DB_TABLE'):
             db_table = settings.SHOW_LOCATION_DB_TABLE
         app_label = 'schedule'
 
 
 class Show(MetadataSubjectMixin,
-           SubmittableMixin,
-           CreatableMixin,
-           CreditableMixin):
+           l_mixins.SubmittableMixin,
+           p_mixins.CreatableMixin,
+           p_mixins.CreditableMixin):
     """
     A show in the URY schedule.
 
@@ -238,10 +240,11 @@ class Show(MetadataSubjectMixin,
         """
         # Show rules take precedence
         block_matches = self.blockshowrule_set.order_by(
-            '-block__priority')
-        if block_matches.exists():
-            block = block_matches[0].block
-        else:
+            '-block__priority'
+        ).values_list('block', flat=True)
+        try:
+            block = block_matches[0]
+        except IndexError:
             block = None
         return block
 
@@ -250,14 +253,8 @@ ShowTextMetadata = TextMetadata.make_model(
     Show,
     'schedule',
     'ShowTextMetadata',
-    getattr(
-        settings, 'SHOW_TEXT_METADATA_DB_TABLE',
-        None
-    ),
-    getattr(
-        settings, 'SHOW_TEXT_METADATA_DB_ID_COLUMN',
-        None
-    ),
+    getattr(settings, 'SHOW_TEXT_METADATA_DB_TABLE', None),
+    getattr(settings, 'SHOW_TEXT_METADATA_DB_ID_COLUMN', None),
     fkey=Show.make_foreign_key(),
 )
 
@@ -266,14 +263,8 @@ ShowImageMetadata = ImageMetadata.make_model(
     Show,
     'schedule',
     'ShowImageMetadata',
-    getattr(
-        settings, 'SHOW_IMAGE_METADATA_DB_TABLE',
-        None
-    ),
-    getattr(
-        settings, 'SHOW_IMAGE_METADATA_DB_ID_COLUMN',
-        None
-    ),
+    getattr(settings, 'SHOW_IMAGE_METADATA_DB_TABLE', None),
+    getattr(settings, 'SHOW_IMAGE_METADATA_DB_ID_COLUMN', None),
     fkey=Show.make_foreign_key(),
 )
 
