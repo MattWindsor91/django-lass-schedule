@@ -1,17 +1,16 @@
-"""Classes representing a weekly schedule table.
+"""Functions for building a weekly schedule table.
 
-The weekly schedule table is complicated to construct from the
-timeslot ranges it is built up from, and as such these classes and
-their constituent functions are quite voluminous.  Any intrepid
-coder who can cut away swathes of this module without sacrificing its
-functionality is a true hero.
-
+You will probably want 'tabulate' specifically.
 """
 
 from django.utils import timezone
 
 from .. import utils
+from ..utils import nltime
 
+
+###############################################################################
+# Internal constants
 
 # Common timedeltas
 HOUR = timezone.timedelta(hours=1)
@@ -27,54 +26,8 @@ SCHEDULE_DAY_OFFSET = 1
 SCHEDULE_TIME_COL = 0
 
 
-def un_nld(nldate):
-    """Converts naive dates of local times into their aware date versions.
-
-    This is the inverse of nld.
-
-    Args:
-        nldate: the naive datetime representing a local time
-
-    Returns:
-        the aware datetime equivalent
-    """
-    return timezone.make_aware(nldate, timezone.get_current_timezone())
-
-
-def nldiff(a, b):
-    """Takes the local-time difference between an aware datetime object
-    pair.
-
-    This is equivalent to nld(a) - nld(b).
-
-    Args:
-        a: the datetime minuend.
-        b: the datetime subtrahend.
-
-    Returns:
-        the local-time timedelta between the two (in other words, the
-        amount of "local time" in between the two dates, which may not be the
-        same as the amount of actual time due to DST shifting).
-    """
-    return nld(a) - nld(b)
-
-
-def nld(date):
-    """Converts aware dates to their naive local time representation.
-
-    In other words, converts the timezone from the aware date timezone (usually
-    UTC) to the current local timezone, then immediately strips the timezone
-    data.
-
-    Args:
-        date: the active datetime to convert to naive local
-
-    Returns:
-        the naive local datetime equivalent
-    """
-    local = timezone.localtime(date)
-    return timezone.make_naive(local, local.tzinfo)
-
+###############################################################################
+# Public interface
 
 def tabulate(schedule):
     """Takes a list of slots and converts it into a week schedule table.
@@ -93,117 +46,17 @@ def tabulate(schedule):
         # This is just an error signifier, pass it through.
         table = data
     else:
-        nlstart = nld(schedule.start)
+        nlstart = nltime.nld(schedule.start)
         data_lists, partitions = split_days(nlstart, schedule.data)
         table = empty_table(nlstart, partitions, len(data_lists))
         populate_table(table, data_lists)
     return table
 
 
-def populate_table(table, data_lists):
-    """Populates empty schedule tables with data from the given lists.
+###############################################################################
+# Internals
 
-    Args:
-        table: the empty table (generally created by empty_table) to populate
-            with schedule data; this is potentially mutated in-place.
-        data_lists: a list of lists, each representing one day of consecutive
-            timeslots.
-
-    Returns:
-        the populated table, which may or may not be the same object as table
-        depending on implementation.
-    """
-    for i, day in enumerate(data_lists):
-        populate_table_day(
-            make_row_date(table, i),
-            make_add_to_table(table, i),
-            day
-        )
-    return table
-
-
-# Higher-order functions
-def make_row_date(table, days):
-    """A function that makes a function mapping rows to their starting
-    datetimes.
-
-    Args:
-        table: the schedule table the returned function will look-up dates in.
-        days: the number of days since the start of the schedule.
-
-    Returns:
-        a function closed over table and day_offset that takes a row and
-        returns its datetime for the day being considered.
-    """
-    offset = timezone.timedelta(days=days)
-    return lambda row: table[row][SCHEDULE_TIME_COL] + offset
-
-
-def make_add_to_table(table, days):
-    """A function that makes a function that adds a slot into a table.
-
-    Args:
-        table: the schedule table the returned function will add entries into.
-        days: the number of days since the start of the schedule.
-
-    Returns:
-        a function closed over table and day_offset that takes a row, timeslot
-        to place on that row and that timeslot's row occupacy, and inserts the
-        data into the schedule table.
-    """
-    col = SCHEDULE_DAY_OFFSET + days
-
-    # Not an expression, therefore cannot be a lambda.
-    def f(row, slot, rows):
-        table[row][col] = slot, rows
-
-    return f
-
-
-def populate_table_day(row_date, add_to_table, day):
-    """Adds a day of slots into the table using the given functions.
-
-    Args:
-        row_date: a function taking a table row index and returning the naive
-            local datetime of its start on this day.
-        add_to_table: a function taking a table row index, a timeslot whose
-            record starting on that row and the number of rows it spans, and
-            adding it into the schedule table.
-    """
-    current_row = 0
-    for slot in day:
-        start_row = current_row
-        hit_bottom = False
-
-        # How much local time does this slot take up?
-        nlend = nld(slot.end_time)
-
-        # Work out how many rows this slot fits into.
-        try:
-            while row_date(current_row) < nlend:
-                current_row += 1
-        except IndexError:
-            # This usually means this show crosses over the day boundary;
-            # this is normal.
-            hit_bottom = True
-        else:
-            # If our partitioning is sound and we haven't run off the end
-            # of a day, then the slot must fit exactly into one or more
-            # rows.
-            if row_date(current_row) > nlend:
-                raise utils.exceptions.ScheduleInconsistencyError(
-                    'Partitioning unsound - show exceeds partition bounds.'
-                    ' (Row {}, show {}, date {} > {} < {})'.format(
-                        current_row,
-                        slot,
-                        row_date(current_row),
-                        nlend,
-                        'END' if hit_bottom else row_date(current_row + 1)
-                    )
-                )
-
-        add_to_table(start_row, slot, current_row - start_row)
-
+# 1. Day splitting and partitioning #
 
 def split_days(nlstart, data):
     """Takes a list of slots and splits it into many lists of one day each.
@@ -226,13 +79,13 @@ def split_days(nlstart, data):
     """
     done_day_lists = []
     day_list = []
-    partitions = set([timezone.timedelta(days=0)])
+    partitions = set([])
 
     day_start = nlstart
     day_end = day_start + DAY
 
     for slot in data:
-        nlslot = nld(slot.start_time)
+        nlslot = nltime.nld(slot.start_time)
         # If the next slot is outside the day we're looking at. rotate it.
         # To deal with shows straddling multiple days, check for multiple
         # rotations (hence the while loop).
@@ -268,16 +121,22 @@ def add_partitions(day_start, day_end, slot, partitions):
     """
     if not slot.is_collapsible:
         # Prevent negative partitions if the show started on a previous day.
-        start_p = max(day_start, nld(slot.start_time)) - day_start
+        start_p = max(day_start, nltime.nld(slot.start_time)) - day_start
         # And overly large ones if the show ends on another day.
-        end_p = min(day_end, nld(slot.end_time)) - day_start
+        end_p = min(day_end, nltime.nld(slot.end_time)) - day_start
 
-        partitions |= {start_p, end_p}
+        # Don't add end_p - if our schedule is sound, then there should be no
+        # need to partition on it (all the ends are starts of other shows, or
+        # the ends of days which we don't want to be partitioned on).
+        partitions.add(start_p)
 
-        # Now add all the exact hours between start_par and end_par, if any
+        # Now add all the exact hours between start_p and end_p, if any
+        # (hour_p is set to the next hour after start_p)
         hour_p = timezone.timedelta(
             days=start_p.days,
-            seconds=(start_p.seconds % (60 * 60)) + (60 * 60)
+            seconds=(
+                start_p.seconds - (start_p.seconds % (60 * 60))
+            ) + (60 * 60)
         )
         while hour_p < end_p:
             partitions.add(hour_p)
@@ -315,15 +174,16 @@ def rotate_day(day_end, day_list, done_day_lists):
     # between the two days and, if so, make sure it appears at the start of the
     # new list too.
     last_show = day_list[-1]
-    return [last_show] if nld(last_show.end_time) > day_end else []
+    return [last_show] if nltime.nld(last_show.end_time) > day_end else []
 
 
-def empty_table(nlstart, partitions, n_cols):
+# 2. Empty table generation #
+
+def empty_table(start, partitions, n_cols):
     """Creates an empty schedule table.
 
     Args:
-        nlstart: the start of the schedule, as a naive local datetime.  See
-            nld().
+        start: the (naive local) schedule start datetime. See nld().
         partitions: the set of row starts, as offsets from nlstart.
         n_cols: the number of schedule columns (days), usually 7.
 
@@ -335,4 +195,114 @@ def empty_table(nlstart, partitions, n_cols):
         offsets for the other days), their offset from nlstart, and then
         num_cols instances of None ready to be filled with schedule data.
     """
-    return [[(nlstart + i)] + ([None] * n_cols) for i in sorted(partitions)]
+    return [[(start + i)] + ([None] * n_cols) for i in sorted(partitions)]
+
+
+# 3. Population #
+
+def populate_table(table, data_lists):
+    """Populates empty schedule tables with data from the given lists.
+
+    Args:
+        table: the empty table (generally created by empty_table) to populate
+            with schedule data; this is potentially mutated in-place.
+        data_lists: a list of lists, each representing one day of consecutive
+            timeslots.
+
+    Returns:
+        the populated table, which may or may not be the same object as table
+        depending on implementation.
+    """
+    for i, day in enumerate(data_lists):
+        populate_table_day(
+            make_row_date(table, i),
+            make_add_to_table(table, i),
+            day
+        )
+    return table
+
+
+def populate_table_day(row_date, add_to_table, day):
+    """Adds a day of slots into the table using the given functions.
+
+    Args:
+        row_date: a function taking a table row index and returning the naive
+            local datetime of its start on this day.
+        add_to_table: a function taking a table row index, a timeslot whose
+            record starting on that row and the number of rows it spans, and
+            adding it into the schedule table.
+    """
+    current_row = 0
+    for slot in day:
+        start_row = current_row
+        hit_bottom = False
+
+        # How much local time does this slot take up?
+        nlend = nltime.nld(slot.end_time)
+
+        # Work out how many rows this slot fits into.
+        try:
+            while row_date(current_row) < nlend:
+                current_row += 1
+        except IndexError:
+            # This usually means this show crosses over the day boundary;
+            # this is normal.
+            hit_bottom = True
+        else:
+            # If our partitioning is sound and we haven't run off the end
+            # of a day, then the slot must fit exactly into one or more
+            # rows.
+            if not hit_bottom and row_date(current_row) > nlend:
+                raise utils.exceptions.ScheduleInconsistencyError(
+                    'Partitioning unsound - show exceeds partition bounds.'
+                    ' (Row {}, show {}, date {} > {} < {})'.format(
+                        current_row,
+                        slot,
+                        row_date(current_row),
+                        nlend,
+                        row_date(current_row + 1)
+                    )
+                )
+
+        add_to_table(start_row, slot, current_row - start_row)
+
+
+###############################################################################
+# Higher-order functions
+
+def make_row_date(table, days):
+    """A function that makes a function mapping rows to their starting
+    datetimes.
+
+    Args:
+        table: the schedule table the returned function will look-up dates in.
+        days: the number of days since the start of the schedule.
+
+    Returns:
+        a function closed over table and day_offset that takes a row and
+        returns its datetime for the day being considered.
+    """
+    offset = timezone.timedelta(days=days)
+    return lambda row: table[row][SCHEDULE_TIME_COL] + offset
+
+
+def make_add_to_table(table, days):
+    """A function that makes a function that adds a slot into a table.
+
+    Args:
+        table: the schedule table the returned function will add entries into.
+        days: the number of days since the start of the schedule.
+
+    Returns:
+        a function closed over table and day_offset that takes a row, timeslot
+        to place on that row and that timeslot's row occupacy, and inserts the
+        data into the schedule table.
+    """
+    col = SCHEDULE_DAY_OFFSET + days
+
+    # Not an expression, therefore cannot be a lambda.
+    def f(row, slot, rows):
+        if rows > 0:
+            table[row][col] = slot, rows
+
+    return f

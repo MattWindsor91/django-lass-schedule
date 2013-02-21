@@ -212,9 +212,10 @@ def range_builder(schedule, timeslots=None):
     if not term:
         result = 'empty' if not models.Term.before(start) else 'not_in_term'
     else:
-        if not timeslots:
+        # Not 'if timeslots', that might evaluate the query!
+        if timeslots is None:
             timeslots = models.Timeslot.objects.public()
 
-        slots = list(timeslots.in_range(start, end))
+        slots = list(timeslots.select_related().in_range(start, end))
         result = utils.filler.fill(slots, start, end) if slots else 'empty'
     return result

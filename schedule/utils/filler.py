@@ -57,7 +57,9 @@ def show(start_time, duration):
     if cached:
         show = cached
     else:
-        show = Show.objects.get(show_type__name__iexact='filler')
+        show = Show.objects.select_related().get(
+            show_type__name__iexact='filler'
+        )
         cache.set('filler-show', show, FILLER_SHOW_CACHE_TIME)
     return show
 

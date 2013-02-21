@@ -33,7 +33,7 @@ def between(start, end, limit=None):
     return trim(
         filler.fill(
             trim(
-                Timeslot.objects.public().in_range(
+                Timeslot.objects.public().select_related().in_range(
                     start,
                     end
                 )
