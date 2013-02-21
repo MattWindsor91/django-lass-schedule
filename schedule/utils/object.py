@@ -123,7 +123,7 @@ class DaySchedule(Schedule):
 
     def __unicode__(self):
         """Representation of this schedule object, in Unicode format."""
-        return u'Schedule for {:%A, :%d %b %Y}'.format(self.start)
+        return u'Schedule for {:%A, %d %b %Y}'.format(self.start)
 
     @d_models.permalink
     def get_absolute_url(self):
