@@ -28,6 +28,11 @@ urlpatterns = patterns(
     ),
     # WEEK SCHEDULES
     url(
+        r'^thisweek/',
+        'schedule_week',
+        name='this_week'
+    ),
+    url(
         ur.WEEK_REGEX,
         'schedule_week',
         name='schedule_week'
