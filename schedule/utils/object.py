@@ -105,6 +105,8 @@ class Schedule(object):
 
 class DaySchedule(Schedule):
     """A schedule type that specifically works for day schedule ranges."""
+    type = 'Day'
+
     def __init__(self, start, builder, range=None):
         """Initialises a DaySchedule."""
         super(DaySchedule, self).__init__(
@@ -121,7 +123,7 @@ class DaySchedule(Schedule):
 
     def __unicode__(self):
         """Representation of this schedule object, in Unicode format."""
-        return u'Schedule for {:%A, %b %Y}'.format(self.start)
+        return u'Schedule for {:%A, :%d %b %Y}'.format(self.start)
 
     @d_models.permalink
     def get_absolute_url(self):
@@ -135,6 +137,8 @@ class DaySchedule(Schedule):
 
 class WeekSchedule(Schedule):
     """A schedule type that specifically works for week schedule ranges."""
+    type = 'Week'
+
     def __init__(self, start, builder, range=None):
         """Initialises a WeekSchedule."""
         super(WeekSchedule, self).__init__(
