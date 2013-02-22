@@ -225,7 +225,7 @@ class Timeslot(p_mixins.ApprovableMixin,
 
         """
         return (
-            u'__'.join(u'start_time', inequality),
+            u'__'.join((u'start_time', inequality)),
             value
         )
 
@@ -238,7 +238,7 @@ class Timeslot(p_mixins.ApprovableMixin,
 
         """
         return (
-            u'__'.join(u'duration', inequality),
+            u'__'.join((u'duration', inequality)),
             value - models.F('start_time')
         )
 
