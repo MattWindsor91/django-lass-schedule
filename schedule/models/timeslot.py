@@ -245,13 +245,15 @@ class Timeslot(p_mixins.ApprovableMixin,
     # Model
 
     @models.permalink
-    def get_absolute_url(self):
-        """Retrieves the absolute URL through which a timeslot can be
-        found on the website.
+    def get_relative_number_url(self):
+        """Retrieves the relative-number based absolute URL through which a
+        timeslot can be found on the website.
 
+        This is nicer than get_absolute_url, but very costly in terms of
+        queries.
         """
         return (
-            'timeslot_detail',
+            'timeslot_detail_relative',
             (),
             {
                 'pk': self.season.show.id,
@@ -259,6 +261,14 @@ class Timeslot(p_mixins.ApprovableMixin,
                 'timeslot_num': self.number
             }
         )
+
+    @models.permalink
+    def get_absolute_url(self):
+        """Retrieves the absolute URL through which a timeslot can be
+        found on the website.
+
+        """
+        return ('timeslot_detail', (), {'pk': self.pk})
 
     @property
     def number(self):

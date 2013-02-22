@@ -128,19 +128,29 @@ class Season(MetadataSubjectMixin,
         return self.show.credits_set()
 
     @models.permalink
-    def get_absolute_url(self):
-        """Retrieves the absolute URL through which a timeslot can be
-        found on the website.
+    def get_relative_number_url(self):
+        """Retrieves the relative-number based absolute URL through which a
+        season can be found on the website.
 
+        This is nicer than get_absolute_url, but very costly in terms of
+        queries.
         """
         return (
-            'season_detail',
+            'season_detail_relative',
             (),
             {
                 'pk': self.show.id,
                 'season_num': self.number
             }
         )
+
+    @models.permalink
+    def get_absolute_url(self):
+        """Retrieves the absolute URL through which a season can be
+        found on the website.
+
+        """
+        return ('season_detail', (), {'pk': self.pk})
 
     ## ADDITIONAL METHODS ##
 
