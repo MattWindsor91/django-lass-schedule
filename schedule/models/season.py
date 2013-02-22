@@ -151,11 +151,9 @@ class Season(MetadataSubjectMixin,
 
         """
         if not hasattr(self, '_number'):
-            for index, season in enumerate(self.show.season_set.all()):
-                if season.id == self.id:
-                    self._number = index + 1  # Note that this can never be 0
-                    break
-            assert self._number, "Season not in its show's season set."
+            self._number = list(
+                self.show.season_set.values_list('pk', flat=True)
+            ).index(self.pk) + 1
         return self._number
 
     def block(self):

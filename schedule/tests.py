@@ -476,6 +476,29 @@ class SeasonScheduledSet(TestCase):
             self.assertEqual(season.timeslot_set.count(), 0)
 
 
+class RelativeNumbers(TestCase):
+    """Tests whether Season and Timeslot have the 'number' field, which returns
+    the relative number of the season/timeslot in its show/season respectively.
+
+    """
+    fixtures = [
+        'test_people',
+        'test_terms',
+        'filler_show',
+        'test_shows'
+    ]
+
+    def test_number_timeslot(self):
+        for season in Season.objects.all():
+            for i, timeslot in enumerate(season.timeslot_set.all()):
+                self.assertEqual(timeslot.number, i + 1)
+
+    def test_number_season(self):
+        for show in Show.objects.all():
+            for i, season in enumerate(show.season_set.all()):
+                self.assertEqual(season.number, i + 1)
+
+
 class ShowListableSet(TestCase):
     """
     Tests whether the Show QuerySet provides a method 'listable'

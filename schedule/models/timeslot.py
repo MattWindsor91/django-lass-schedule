@@ -267,11 +267,9 @@ class Timeslot(p_mixins.ApprovableMixin,
 
         """
         if not hasattr(self, '_number'):
-            for index, timeslot in enumerate(self.season.timeslot_set.all()):
-                if timeslot.id == self.id:
-                    self._number = index + 1  # Note that this can never be 0
-                    break
-            assert self._number, "Timeslot not in its season's timeslot set."
+            self._number = list(
+                self.season.timeslot_set.values_list('pk', flat=True)
+            ).index(self.pk) + 1
         return self._number
 
     @classmethod
