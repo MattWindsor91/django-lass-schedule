@@ -10,6 +10,7 @@ from django.db import models as d_models
 
 from .. import utils
 from .. import models
+from ..utils import block
 from ..utils import range as r
 from ..utils import week_table
 
@@ -221,5 +222,8 @@ def range_builder(schedule, timeslots=None):
             timeslots = models.Timeslot.objects.public()
 
         slots = list(timeslots.select_related().in_range(start, end))
-        result = utils.filler.fill(slots, start, end) if slots else 'empty'
+        result = (
+            block.annotate(utils.filler.fill(slots, start, end))
+            if slots else 'empty'
+        )
     return result

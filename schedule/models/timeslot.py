@@ -8,7 +8,6 @@ from datetime import timedelta as td
 from django.conf import settings
 from django.db import models
 from django.db.models.query import QuerySet
-from django.utils import timezone
 
 import timedelta
 
@@ -21,7 +20,6 @@ from model_utils.managers import PassThroughManager
 
 from people import mixins as p_mixins
 
-from schedule.models.block import BlockRangeRule
 from schedule.models.show import ShowLocation
 from schedule.models.season import Season
 
@@ -261,69 +259,6 @@ class Timeslot(p_mixins.ApprovableMixin,
                 'timeslot_num': self.number
             }
         )
-
-    def block(self):
-        """Returns the block that the timeslot is in, if any.
-
-        This will return a Block object if a block is matched, or
-        None if there wasn't one (one can associate to Block.default()
-        in this case, if a block is needed).
-
-        """
-        # Season rules take precedence
-        season_block = self.season.block()
-        if season_block is None:
-            # TODO: add direct rules for timeslot
-            # Now do season based checks
-            #block_show_matches = self.blockshowrule_set.filter(
-            #    show=self).order_by('-priority')
-            #if block_show_matches.exists():
-            #block = block_show_matches[0]
-            #else:
-            # TODO: add time-range rules for timeslot
-
-            # Get start as distance from midnight, and end as
-            # distance plus duration
-            slot_start = self.start_time - self.start_time.replace(
-                hour=0,
-                minute=0,
-                second=0,
-                microsecond=0
-            )
-            slot_end = slot_start + self.duration
-            assert slot_start < slot_end, "Slot starts after end."
-
-            # Because the block range is in local time and the slot
-            # dates are in UTC, we'll need to subtract the local
-            # time's UTC offset in the calculations.
-            utc = self.start_time.astimezone(
-                timezone.get_current_timezone()
-            ).utcoffset()
-            day = td(days=1)
-
-            # Now we can do simple inequalities to match the
-            # time-ranges, with the caveat that we'll have to check
-            # against the slot projected forwards one day to make
-            # sure that ranges starting the day before the show and
-            # ending on the day of the show are considered correctly.
-            block_range_matches = BlockRangeRule.objects.filter(
-                models.Q(
-                    start_time__lte=slot_start + utc,
-                    end_time__gte=slot_end + utc
-                ) |
-                models.Q(
-                    start_time__lte=slot_start + utc + day,
-                    end_time__gte=slot_end + utc + day
-                )
-            ).order_by('-block__priority')
-            block = (
-                block_range_matches[0].block
-                if block_range_matches
-                else None
-            )
-        else:
-            block = season_block
-        return block
 
     @property
     def number(self):
