@@ -125,10 +125,7 @@ def add_partitions(day_start, day_end, slot, partitions):
         # And overly large ones if the show ends on another day.
         end_p = min(day_end, nltime.nld(slot.end_time)) - day_start
 
-        # Don't add end_p - if our schedule is sound, then there should be no
-        # need to partition on it (all the ends are starts of other shows, or
-        # the ends of days which we don't want to be partitioned on).
-        partitions.add(start_p)
+        partitions |= {start_p, end_p}
 
         # Now add all the exact hours between start_p and end_p, if any
         # (hour_p is set to the next hour after start_p)
@@ -195,7 +192,8 @@ def empty_table(start, partitions, n_cols):
         offsets for the other days), their offset from nlstart, and then
         num_cols instances of None ready to be filled with schedule data.
     """
-    return [[(start + i)] + ([None] * n_cols) for i in sorted(partitions)]
+    # We don't want the last partition, as it marks the end of the day.
+    return [[(start + i)] + ([None] * n_cols) for i in sorted(partitions)][:-1]
 
 
 # 3. Population #
