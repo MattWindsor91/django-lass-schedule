@@ -118,5 +118,6 @@ def delta(date):
     Returns:
         a timedelta measuring the time difference between midnight and date.
     """
-    midnight = date.replace(hour=0, minute=0, second=0, microsecond=0)
-    return nltime.nldiff(date, midnight)
+    ndate = nltime.nld(date)
+    midnight = ndate.replace(hour=0, minute=0, second=0, microsecond=0)
+    return ndate - midnight
